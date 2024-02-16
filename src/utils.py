@@ -138,7 +138,7 @@ def get_basin_list() -> List:
     List
         List containing the 8-digit basin code of all basins
     """
-    basin_file = Path(__file__).absolute().parent.parent / "data/basin_list2.txt" 
+    basin_file = Path(__file__).absolute().parent.parent / "data/basin_list.txt" 
     with basin_file.open('r') as fp:
         basins = fp.readlines()
     basins = [basin.strip() for basin in basins]
