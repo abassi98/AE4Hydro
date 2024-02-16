@@ -1,10 +1,9 @@
 import torch
 import pytorch_lightning as pl
-import torch.nn.functional as F
 import torch.nn as nn
 import torch.optim as optim
 from src.utils import AdaptiveScheduler
-from src.nseloss import NSELoss
+
 
 def nse(y, y_hat):
     SSerr = torch.sum((y_hat - y)**2, dim=1)
