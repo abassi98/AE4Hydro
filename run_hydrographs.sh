@@ -19,4 +19,4 @@ module load gcc/9.4.0-pe5.34 miniconda3/4.12.0 lsfm-init-miniconda/1.0.0
 # from here onwards you can run everywhere
 
 conda activate hydro
-python analyse_hydrographs.py
+python analysis/analyse_hydrographs.py

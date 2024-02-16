@@ -13,12 +13,10 @@ import glob
 import os
 import pickle
 import sys
-
 import pandas as pd
 
 
 # number of ensemble members
-
 nSeeds = 4
 firstSeed = 300
 
@@ -26,89 +24,51 @@ firstSeed = 300
 folder = sys.argv[1]
 experiment = sys.argv[2] # the options are "lstm_ae", "stat_lstm" and "lstm".
 encoded_features = int(sys.argv[3]) # dimension of the encoded space in autoencoder
-
 gpu = -1
-
-if "global" in experiment:
-    nSplits = 1
-else:
-    nSplits = 5
 
 # This loop will run the evaluation procedure for all splits of all ensembles
 for seed in range(firstSeed, firstSeed + nSeeds):  # loop through randomized ensembles
-    for split in range(nSplits):  # number of k-fold splits
-        # get the correct run directory by reading the screen report
-        if "global" in experiment:
-            fname = f"reports/{folder}/{experiment}_nldas.{seed}.out"
-            f = open(fname)
-            lines = f.readlines()
-            print(f"Working on seed: {seed} -- file: {fname}")
-            run_dir = lines[33].split('MultiBasinHydro2/')[1].split('attributes')[0]
-            run_command = f"python LSTM_AE_main.py --gpu={gpu} --run_dir={run_dir} evaluate"
+    # get the correct run directory by reading the screen report
+    fname = f"reports/{folder}/{experiment}_nldas.{seed}.out"
+    f = open(fname)
+    lines = f.readlines()
+    print(f"Working on seed: {seed} -- file: {fname}")
+    run_dir = lines[33].split('AE4Hydro/')[1].split('attributes')[0]
+    run_command = f"python main.py --gpu={gpu} --run_dir={run_dir} evaluate"
 
-        elif experiment == "lstm_ae":
-            fname = f"reports/{folder}/{experiment}_nldas.{seed}.{split}.out"
-            print(f"Working on seed: {seed} -- file: {fname}")
-            f = open(fname)
-            lines = f.readlines()
-            split_file = lines[13].split(': ')[1][:-1]
-            split_num = lines[12].split(' ')[1][:-1]
-            run_dir = lines[33].split('MultiBasinHydro2/')[1].split('attributes')[0]
-            run_command = f"python LSTM_AE_main.py --gpu={gpu} --run_dir={run_dir} --split={split_num} --split_file={split_file} evaluate" 
-        else:
-            fname = f"reports/{folder}/{experiment}_nldas.{seed}.{split}.out"
-            print(f"Working on seed: {seed} -- file: {fname}")
-            f = open(fname)
-            lines = f.readlines()
-            split_file = lines[14].split(': ')[1][:-1]
-            split_num = lines[13].split(' ')[1][:-1]
-            run_dir = lines[33].split('MultiBasinHydro2/')[1].split('attributes')[0]
-            run_command = f"python LSTM_main.py --gpu={gpu} --run_dir={run_dir} --split={split_num} --split_file={split_file} evaluate" 
+    # run command
+    os.system(run_command)
     
-        
-        os.system(run_command)
-        
-        
-        # grab the test output file for this split
-        #file_seed = run_dir.split('seed')[1][:-1]
-        results_file = glob.glob(f"{run_dir}/*lstm*seed*.p")[0]
-        #print(results_file)
-        with open(results_file, 'rb') as f:
-            partial_dict = pickle.load(f)
+    # grab the test output file for this split
+    results_file = glob.glob(f"{run_dir}/*lstm*seed*.p")[0]
+    with open(results_file, 'rb') as f:
+        partial_dict = pickle.load(f)
 
-        if "ae" in experiment and encoded_features > 0:
-            results_file_enc = glob.glob(f"{run_dir}/*encoded*seed*.p")[0]
-            with open(results_file_enc, 'rb') as f:
-                partial_dict_enc = pickle.load(f)
-        
+    if encoded_features > 0:
+        results_file_enc = glob.glob(f"{run_dir}/*encoded*seed*.p")[0]
+        with open(results_file_enc, 'rb') as f:
+            partial_dict_enc = pickle.load(f)
        
-    
-        # store in a dictionary for this seed
-        if split > 0:
-            seed_dict.update(partial_dict)
-            if "ae" in experiment and encoded_features > 0:
-                seed_dict_enc.update(partial_dict_enc)
-        else:
-            seed_dict = partial_dict
-            if "ae" in experiment and encoded_features > 0:
-                seed_dict_enc = partial_dict_enc
+    seed_dict = partial_dict
+    if encoded_features > 0:
+        seed_dict_enc = partial_dict_enc
 
-        # screen report
-        print(seed, split, len(seed_dict))
-        
-        # --- end of split loop -----------------------------------------
+    # screen report
+    print(seed, len(seed_dict))
+    
+    # --- end of split loop -----------------------------------------
 
     # create the ensemble dictionary
     for basin in seed_dict:
         seed_dict[basin].rename(columns={'qsim': f"qsim_{seed}"}, inplace=True)
-        if "ae" in experiment and encoded_features > 0:
+        if encoded_features > 0:
             seed_dict_enc[basin].rename(columns={ 0 : seed}, inplace=True)
             
        
     
     if seed == 300: 
         ens_dict = seed_dict
-        if "ae" in experiment and encoded_features > 0:
+        if encoded_features > 0:
             ens_dict_enc = seed_dict_enc
     else:
         for basin in seed_dict:
@@ -118,7 +78,7 @@ for seed in range(firstSeed, firstSeed + nSeeds):  # loop through randomized ens
                 how='inner',
                 left_index=True,
                 right_index=True)
-            if "ae" in experiment and encoded_features > 0:
+            if encoded_features > 0:
                 ens_dict_enc[basin] = pd.merge(
                     ens_dict_enc[basin],
                     seed_dict_enc[basin][seed],

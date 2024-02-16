@@ -20,22 +20,7 @@ module load gcc/9.4.0-pe5.34 miniconda3/4.12.0 lsfm-init-miniconda/1.0.0
 
 conda activate hydro
 
+python run_analysis.py LSTM $1 $2
+python analysis/main_performance.py $1 $2
 
-if [[ "$1" == *"lstm"* ]]; then
-    if [[ "$1" == *"lstm_ae"* ]]; then
-        if [[ "$1" == *"lstm_ae_k"* ]]; then
-            python run_analysis.py LSTM $1 $2
-            python analysis/main_performance.py $1 $2
-        else
-            python run_analysis.py LSTM_AE_$2 $1 $2
-            python analysis/main_performance.py $1 $2  
-        fi
-    else
-        python run_analysis.py LSTM $1 $2
-        python analysis/main_performance.py $1 $2
-    fi
-else
-    echo bad model choice
-    exit
-fi
 
