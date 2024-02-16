@@ -1,18 +1,8 @@
 import argparse
 import numpy as np
 import pandas as pd
-import geopandas as gpd
 import matplotlib.pyplot as plt
-from typing import List
 import seaborn as sns
-from sklearn.manifold import TSNE
-import pickle
-from src.datautils import INVALID_ATTR, load_attributes, add_camels_attributes, INVALID_ATTR
-from pathlib import Path, PosixPath
-from dadapy import data
-import umap
-from sklearn.decomposition import PCA
-from scipy.ndimage import gaussian_filter1d
 
 def get_args():
     """Parse input arguments

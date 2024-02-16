@@ -10,7 +10,7 @@ import pandas as pd
 from tqdm import tqdm
 from typing import List
 
-from src.datasets import CamelsTXT, CamelDataset
+from src.datasets import CamelDataset
 from torch.utils.data import DataLoader
 
 

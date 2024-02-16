@@ -1,16 +1,5 @@
-"""
-This file is part of the accompanying code to our manuscript:
-
-Kratzert, F., Klotz, D., Herrnegger, M., Sampson, A. K., Hochreiter, S., Nearing, G., "Prediction 
-in Ungauged Basins with Long Short-Term Memory Networks". submitted to Water Resources Research 
-(2019)
-
-You should have received a copy of the Apache-2.0 license along with the code. If not,
-see <https://opensource.org/licenses/Apache-2.0>
-"""
 
 import numpy as np
-
 
 def nse(df):
     idex = df["qsim"].index[(df["qsim"] >= 0) & (df["qobs"] >= 0)].tolist()

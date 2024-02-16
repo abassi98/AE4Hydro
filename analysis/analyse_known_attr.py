@@ -2,17 +2,11 @@ import argparse
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
-import seaborn as sns
 from sklearn.manifold import LocallyLinearEmbedding
-import plotly.express as px
-
-from pathlib import Path, PosixPath
-from dadapy import data, MetricComparisons
-import umap
-from sklearn.decomposition import PCA
 from src.utils import get_basin_list
 from src.datautils import load_attributes
 from src.utils import clean_and_capitalize
+from dadapy import data
 
 def get_args():
     """Parse input arguments

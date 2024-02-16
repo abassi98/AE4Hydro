@@ -58,12 +58,6 @@ GLOBAL_SETTINGS = {
     'val_end': pd.to_datetime('29092010', format='%d%m%Y')
 }
 
-###############
-# Prepare run #
-###############
-
-
-
 
 def get_args() -> Dict:
     """Parse input arguments
