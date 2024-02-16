@@ -1,0 +1,21 @@
+
+name: hydro
+dependencies:
+  - pytorch
+  - torchvision
+  - pandas
+  - scipy
+  - scikit-learn
+  - tqdm
+  - h5py
+  - numba
+  - xarray
+  - matplotlib
+  - pytorch-lightning
+  - pip
+  - pip:
+    - geopandas
+    - seaborn
+    - wandb
+    - umap-learn
+    - dadapy
