@@ -33,15 +33,7 @@ INVALID_ATTR_PLOT = [
     'glim_2nd_class_frac', 'dom_land_cover_frac', 'dom_land_cover', 'high_prec_timing',
     'low_prec_timing', 'huc', "gauge_lat", "gauge_lon"
 ]
-#'zero_q_freq',
 
-# # CAMELS catchment characteristics ignored in this study
-# INVALID_ATTR = [
-#     'gauge_name', 'area_geospa_fabric', 'geol_1st_class', 'glim_1st_class_frac', 'geol_2nd_class',
-#     'glim_2nd_class_frac', 'dom_land_cover_frac', 'dom_land_cover', 'high_prec_timing',
-#     'low_prec_timing', 'huc', 'geol_porostiy', 'root_depth_50', 'root_depth_99', 'organic_frac',
-#     'water_frac', 'other_frac'
-# ]
 
 KEEP_ATTR = {
     'q_mean', 'runoff_ratio', 'stream_elas', 'slope_fdc',
@@ -49,13 +41,7 @@ KEEP_ATTR = {
     'low_q_dur', 'gauge_lat', 'gauge_lon'
 }
 
-## Maurer mean/std calculated over all basins in period 01.10.1999 until 30.09.2008
-#SCALER = {
-#    'input_means': np.array([3.17563234, 372.01003929, 17.31934062, 3.97393362, 924.98004197]),
-#    'input_stds': np.array([6.94344737, 131.63560881, 10.86689718, 10.3940032, 629.44576432]),
-#    'output_mean': np.array([1.49996196]),
-#    'output_std': np.array([3.62443672])
-#}
+
 
 # NLDAS mean/std calculated over all basins in period 01.10.1999 until 30.09.2008
 SCALER = {
@@ -65,46 +51,6 @@ SCALER = {
     'output_std': np.array([3.62443672])
 }
 
-# # DAYMET mean/std calculated over all basins in period 01.10.1980 until 30.09.2010
-# SCALER = {
-#     'input_means': np.array([3.23168801, 341.34746557, 16.59262584, 4.10364306, 949.05419731]),
-#     'input_stds': np.array([7.73202961, 131.81715511, 11.14410981, 10.19736899, 653.04153153]),
-#     'output_mean': np.array([1.49102271]),
-#     'output_std': np.array([3.66015654])
-# }
-
-# # DAYMET mean/std calculated over all basins in period 01.10.1980 until 30.09.1995
-# SCALER_TRAIN = {
-#     'input_means': np.array([ 3.18895809, 342.70157554,  16.5439802,    3.84203438, 939.14555434]),
-#     'input_stds': np.array( [ 7.55627993, 132.53128016,  11.18069359,  10.31864553, 649.67098334]),
-#     'output_mean': np.array([1.46860288]),
-#     'output_std': np.array([3.54514685])
-# }
-
-# # DAYMET mean/std calculated over all basins in period 30.09.1995 until 29.09.2010
-# SCALER_VAL = {
-#     'input_means': np.array([  3.27343639, 339.99698285,  16.64002548 ,  4.36415176, 958.91949413]),
-#     'input_stds': np.array( [  7.89964185, 131.08833267,  11.10763773,  10.06832767, 656.27225151]),
-#     'output_mean': np.array([1.51347568]),
-#     'output_std': np.array([3.77168682])
-# }
-
-
-# # DAYMET min/(max-min) calculated over all basins in period 01.10.1980 until 29.09.2010
-# SCALER = {
-#     'input_means': np.array([0.0, 13.05000019, -38.06999969, -48.84000015, 0.0 ]), # act as min
-#     'input_stds': np.array([200.0, 786.94999981, 83.22999954, 76.30999947, 3578.64990234]),
-#     'output_mean': np.array([0.0]),
-#     'output_std': np.array([459.97134399])
-# }
-
-# # NLDAS max/min calculated over all basins over all validation and training period
-# SCALER = {
-#     'input_means': np.array([0.0, 35.91, -30.87, -40.3, 21.82]), # actually the minima
-#     'input_stds': np.array([308.97, 660.41, 79.13, 71.21, 3554.98]), # actually the difference between max and minima
-#     'output_mean': np.array([0.0]),
-#     'output_std': np.array([459.9713568296752])
-# }
 
 
 def add_camels_attributes(camels_root: PosixPath, db_path: str = None):
@@ -236,20 +182,6 @@ def normalize_features(feature: np.ndarray, variable: str, is_train : str=True) 
     else:
         raise RuntimeError(f"Unknown variable type {variable}")
     
-    # if is_train:
-    #     if variable == 'inputs':
-    #         feature = (feature - SCALER_TRAIN["input_means"]) / SCALER_TRAIN["input_stds"]
-    #     elif variable == 'output':
-    #         feature = (feature - SCALER_TRAIN["output_mean"]) / SCALER_TRAIN["output_std"]
-    #     else:
-    #         raise RuntimeError(f"Unknown variable type {variable}")
-    # else:
-    #     if variable == 'inputs':
-    #         feature = (feature - SCALER_VAL["input_means"]) / SCALER_VAL["input_stds"]
-    #     elif variable == 'output':
-    #         feature = (feature - SCALER_VAL["output_mean"]) / SCALER_VAL["output_std"]
-    #     else:
-    #         raise RuntimeError(f"Unknown variable type {variable}")
 
     return feature
 

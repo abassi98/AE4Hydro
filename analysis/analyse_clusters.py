@@ -4,7 +4,7 @@ import numpy as np
 import pandas as pd
 import geopandas as gpd
 import matplotlib.pyplot as plt
-from src.datautils import load_attributes, INVALID_ATTR_PLOT
+from src.datautils import INVALID_ATTR_PLOT
 import seaborn as sns
 from src.utils import get_basin_list
 from pathlib import PosixPath
