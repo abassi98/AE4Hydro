@@ -27,28 +27,27 @@ gpu=0
 
 for (( seed = $firstseed ; seed < $((nseeds+$firstseed)) ; seed++ )); do
     
-    if [ "$1" = "lstm_ae" ]
+    if [ "$1" = "enca" ]
     then
-      if [ ! -d "reports/LSTM_AE_$2/" ] 
+      if [ ! -d "reports/ENCA_$2/" ] 
       then
-        mkdir reports/LSTM_AE_$2/
-        mkdir runs/LSTM_AE_$2/
+        mkdir reports/ENCA_$2/
+        mkdir runs/ENCA_$2/
       fi
-      outfile="reports/LSTM_AE_$2/global_lstm_ae_nldas.$seed.out"
-      python LSTM_AE_main.py --name="LSTM/AE-$2/global" --gpu=$gpu --use_mse=True --encoded_features=$2 train > $outfile
-    elif [ "$1" = "lstm_ae_stat" ]
+      outfile="reports/ENCA_$2/enca_nldas.$seed.out"
+      python main.py --name="ENCA-$2-$seed" --gpu=$gpu --use_mse=True --encoded_features=$2 train > $outfile
+    elif [ "$1" = "caam" ]
     then
-      if [ ! -d "reports/LSTM_AE_$2/" ] 
+      if [ ! -d "reports/CAAM_$2/" ] 
       then
-        mkdir reports/LSTM_AE_$2/
-        mkdir runs/LSTM_AE_$2/
+        mkdir reports/CAAM_$2/
+        mkdir runs/CAAM_$2/
       fi
-      outfile="reports/LSTM_AE_$2/global_lstm_ae_stat_nldas.$seed.out"
-      python LSTM_AE_main.py --no_static=False --name="LSTM/AE-STAT-$2-$seed/global" --gpu=$gpu --use_mse=True --encoded_features=$2 train > $outfile  
+      outfile="reports/CAAM_$2/caam_nldas.$seed.out"
+      python main.py --no_static=False --name="CAAM-$2-$seed" --gpu=$gpu --use_mse=True --encoded_features=$2 train > $outfile  
     else
       echo bad model choice
       exit
     fi
-  
 done
     
