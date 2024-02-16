@@ -8,7 +8,6 @@ import glob
 from collections import defaultdict
 from pathlib import Path, PosixPath
 from typing import Dict, List, Tuple
-import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import torch
@@ -23,7 +22,7 @@ import wandb
 from pytorch_lightning.loggers import WandbLogger
 
 
-from src.datasets import CamelsTXT, CamelDataset
+from src.datasets import CamelDataset
 from src.datautils import add_camels_attributes, rescale_features, normalize_features
 #from papercode.models import Hydro_LSTM
 from src.nseloss import NSELoss
@@ -180,10 +179,12 @@ def _setup_run(cfg: Dict) -> Dict:
   
 
     # initialise wandb runs
-    wandb.init(name=cfg["name"], group="LSTM/AE", project="AE4Hydro", dir=f"runs/LSTM_AE_{cfg['encoded_features']}")
+    if cfg["no_static"]:
+        wandb.init(name=cfg["name"], project="AE4Hydro", dir=f"runs/ENCA_{cfg['encoded_features']}")
+    else:
+        wandb.init(name=cfg["name"], project="AE4Hydro", dir=f"runs/CAAM_{cfg['encoded_features']}")
 
     cfg['run_dir'] = Path(__file__).absolute().parent / wandb.run.dir
-    
     cfg["train_dir"] = cfg["run_dir"] / 'data' 
     cfg["train_dir"].mkdir(parents=True)
     # dump a copy of cfg to run directory
