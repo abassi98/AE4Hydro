@@ -42,7 +42,7 @@ GLOBAL_SETTINGS = {
     'clip_norm': True,
     'clip_value': 1,
     'dropout': 0.4,
-    'epochs': 10000,
+    'epochs': 20000,
     'hidden_size': 256,
     'initial_forget_gate_bias': 5,
     'num_lstm_layers' : 1,
@@ -338,9 +338,9 @@ def train(cfg):
     torch.set_float32_matmul_precision('high')
     
     if cfg["clip_norm"]:
-        trainer = pl.Trainer(max_epochs=cfg["epochs"], callbacks=[checkpoint_model], accelerator=str(DEVICE), devices=1, logger=logger, gradient_clip_val=cfg["clip_value"])
+        trainer = pl.Trainer(max_epochs=cfg["epochs"], callbacks=[checkpoint_model, es], accelerator=str(DEVICE), devices=1, logger=logger, gradient_clip_val=cfg["clip_value"])
     else:
-        trainer = pl.Trainer(max_epochs=cfg["epochs"], callbacks=[checkpoint_model], accelerator=str(DEVICE), devices=1, logger=logger)
+        trainer = pl.Trainer(max_epochs=cfg["epochs"], callbacks=[checkpoint_model, es], accelerator=str(DEVICE), devices=1, logger=logger)
 
     torch.cuda.empty_cache()
     trainer.fit(model=model, train_dataloaders=train_loader, val_dataloaders=val_loader)
