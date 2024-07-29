@@ -1,12 +1,9 @@
 
-import sys
+
 from pathlib import Path, PosixPath
 from typing import List
 import warnings 
-import h5py
-import numpy as np
 import argparse
-from tqdm import tqdm
 from pytorch_lightning import Callback
 import os 
 import torch
@@ -101,30 +98,6 @@ class AdaptiveScheduler(_LRScheduler):
                 for group in self.optimizer.param_groups]
 
 
-def find_best_epoch(dirpath):
-    """
-    Find the epoch at which the validation error is minimized, or quivalently
-    when thevalidation NSE is maximized
-    Returns
-    -------
-        best_epoch : (int)
-    """
-    path_metrics = os.path.join(dirpath, "metrics.pt")
-    data = torch.load(path_metrics, map_location=torch.device('cpu'))
-    epochs_mod = []
-    nse_mod = []
-    for key in data:
-        epoch_num = data[key]["epoch_num"]
-        nse = -data[key]["val_loss"]
-        if isinstance(epoch_num, int):
-            epochs_mod.append(epoch_num)
-            nse_mod.append(nse)
-        else:
-            epochs_mod.append(int(epoch_num.item()))
-            nse_mod.append(nse.item())
-    idx_ae = np.argmax(nse_mod)
-    return int(epochs_mod[idx_ae])
-
 
 def str2bool(v):
     if isinstance(v, bool):
@@ -140,9 +113,6 @@ def clean_and_capitalize(input_string):
     # Split the input string into words
     words = input_string.split("_")
     out = ""
-    
-
-
     for w in words:
         if w=="gages2":
              w="Catchment"

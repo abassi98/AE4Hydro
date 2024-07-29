@@ -1,4 +1,5 @@
 
+
 import sqlite3
 from pathlib import Path, PosixPath
 from typing import List, Tuple
@@ -7,29 +8,26 @@ import numpy as np
 import pandas as pd
 from numba import njit
 
-# CAMELS catchment characteristics ignored in this study
-INVALID_ATTR = [
-    'gauge_name', 'area_geospa_fabric', 'geol_1st_class', 'glim_1st_class_frac', 'geol_2nd_class',
-    'glim_2nd_class_frac', 'dom_land_cover_frac', 'dom_land_cover', 'high_prec_timing',
-    'low_prec_timing', 'huc', 'q_mean', 'runoff_ratio', 'stream_elas', 'slope_fdc',
-    'baseflow_index', 'hfd_mean', 'q5', 'q95', 'high_q_freq', 'high_q_dur', 'low_q_freq',
-    'low_q_dur', 'zero_q_freq', 'geol_porostiy', 'root_depth_50', 'root_depth_99', 'organic_frac',
-    'water_frac', 'other_frac'
+
+CLIM_NAMES = [
+    'p_mean', 'pet_mean', 'frac_snow','aridity', 'high_prec_freq', 'high_prec_dur', 
+    'low_prec_freq', 'low_prec_dur'
 ]
 
-# CAMELS catchment characteristics ignored for plotting
-INVALID_ATTR_PLOT = [
-    'gauge_name', 'area_geospa_fabric', 'geol_1st_class', 'glim_1st_class_frac', 'geol_2nd_class',
-    'glim_2nd_class_frac', 'dom_land_cover_frac', 'dom_land_cover', 'high_prec_timing',
-    'low_prec_timing', 'huc', "gauge_lat", "gauge_lon"
-]
-
-
-KEEP_ATTR = {
+LANDSCAPE_NAMES = [
+    'soil_depth_pelletier', 'soil_depth_statsgo', 'soil_porosity', 'soil_conductivity',
+    'max_water_content', 'sand_frac', 'silt_frac', 'clay_frac', 
+     'carbonate_rocks_frac',  'geol_permeability',
+     'frac_forest', 'lai_max', 'lai_diff', 'gvf_max', 'gvf_diff',
+     'elev_mean', 'slope_mean', 'area_gages2'
+    ]
+    
+HYDRO_NAMES = [
     'q_mean', 'runoff_ratio', 'stream_elas', 'slope_fdc',
     'baseflow_index', 'hfd_mean', 'q5', 'q95', 'high_q_freq', 'high_q_dur', 'low_q_freq',
-    'low_q_dur', 'gauge_lat', 'gauge_lon'
-}
+    'low_q_dur'
+]
+
 
 
 
@@ -40,7 +38,6 @@ SCALER = {
     'output_mean': np.array([1.49996196]),
     'output_std': np.array([3.62443672])
 }
-
 
 
 def add_camels_attributes(camels_root: PosixPath, db_path: str = None):
@@ -93,8 +90,7 @@ def add_camels_attributes(camels_root: PosixPath, db_path: str = None):
 
 def load_attributes(db_path: str,
                     basins: List,
-                    drop_lat_lon: bool = True,
-                    keep_features: List = None,) -> pd.DataFrame:
+                    keep_attributes: List,) -> pd.DataFrame:
     """Load attributes from database file into DataFrame
 
     Parameters
@@ -105,9 +101,8 @@ def load_attributes(db_path: str,
         List containing the 8-digit USGS gauge id
     drop_lat_lon : bool
         If True, drops latitude and longitude column from final data frame, by default True
-    keep_features : List
-        If a list is passed, a pd.DataFrame containing these features will be returned. By default,
-        returns a pd.DataFrame containing the features used for training.
+    keep_attributes : List
+        A pd.DataFrame containing these attributes will be returned.
 
     Returns
     -------
@@ -121,24 +116,11 @@ def load_attributes(db_path: str,
     # drop rows of basins not contained in data set
     drop_basins = [b for b in df.index if b not in basins]
     df = df.drop(drop_basins, axis=0)
-    
-    # drop lat/lon col
-    if drop_lat_lon:
-        df = df.drop(['gauge_lat', 'gauge_lon'], axis=1)
 
-    # drop invalid attributes
-    if keep_features is not None:
-        drop_names = []
-        df = df[KEEP_ATTR]
-        #df = df.reindex(columns=KEEP_ATTR)
-    else:
-        drop_names = [c for c in df.columns if c in INVALID_ATTR]
-
-        
-    df = df.drop(drop_names, axis=1)
+    # filter attributes
+    df = df[keep_attributes]
     df.index.name = None
    
-    
     return df
 
 
@@ -242,8 +224,9 @@ def reshape_data(x: np.ndarray, y: np.ndarray, seq_length: int) -> Tuple[np.ndar
     return x_new, y_new
 
 
-def load_forcing(camels_root: PosixPath, basin: str) -> Tuple[pd.DataFrame, int]:
-    """Load Maurer forcing data from text files.
+
+def load_forcing(camels_root: PosixPath, basin: str, forcing: str) -> Tuple[pd.DataFrame, int]:
+    """Load NLDAS forcing data from text files.
 
     Parameters
     ----------
@@ -251,6 +234,8 @@ def load_forcing(camels_root: PosixPath, basin: str) -> Tuple[pd.DataFrame, int]
         Path to the main directory of the CAMELS data set
     basin : str
         8-digit USGS gauge id
+    forcings: str
+        forcings product (daymet, maurer, nldas_extended)
 
     Returns
     -------
@@ -264,9 +249,10 @@ def load_forcing(camels_root: PosixPath, basin: str) -> Tuple[pd.DataFrame, int]
     RuntimeError
         If not forcing file was found.
     """
-    #    forcing_path = camels_root / 'basin_mean_forcing' / 'maurer_extended'
-    #    forcing_path = camels_root / 'basin_mean_forcing' / 'nldas'
-    forcing_path = camels_root / 'basin_mean_forcing' / 'nldas_extended' # 'daymet' #
+    forcing_path = camels_root / 'basin_mean_forcing' / forcing
+    if not forcing_path.is_dir():
+        raise OSError(f"{forcing_path} does not exist")
+
     files = list(forcing_path.glob('**/*_forcing_leap.txt'))
     file_path = [f for f in files if f.name[:8] == basin]
     if len(file_path) == 0:
@@ -274,10 +260,14 @@ def load_forcing(camels_root: PosixPath, basin: str) -> Tuple[pd.DataFrame, int]
     else:
         file_path = file_path[0]
     
-    #print(file_path)
     df = pd.read_csv(file_path, sep='\s+', header=3)
     dates = (df.Year.map(str) + "/" + df.Mnth.map(str) + "/" + df.Day.map(str))
     df.index = pd.to_datetime(dates, format="%Y/%m/%d")
+    
+    # select five meteorological forcing variables
+    dyn_variables = ["prcp", "srad", "tmax", "tmin", "vp"]
+    filtered_columns = [col for col in df.columns if any(col.lower().startswith(dyn_var) for dyn_var in dyn_variables)]
+    df = df[filtered_columns]
 
     # load area from header
     with open(file_path, 'r') as fp:
@@ -285,6 +275,7 @@ def load_forcing(camels_root: PosixPath, basin: str) -> Tuple[pd.DataFrame, int]
         area = int(content[2])
 
     return df, area
+
 
 
 def load_discharge(camels_root: PosixPath, basin: str, area: int) -> pd.Series:

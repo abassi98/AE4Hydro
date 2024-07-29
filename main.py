@@ -42,7 +42,7 @@ GLOBAL_SETTINGS = {
     'clip_norm': True,
     'clip_value': 1,
     'dropout': 0.4,
-    'epochs': 20000,
+    'epochs': 10000,
     'hidden_size': 256,
     'initial_forget_gate_bias': 5,
     'num_lstm_layers' : 1,
@@ -54,10 +54,9 @@ GLOBAL_SETTINGS = {
     "linear" : 512,
     'train_start': pd.to_datetime('01101980', format='%d%m%Y'),
     'train_end': pd.to_datetime('30091995', format='%d%m%Y'),
-    'val_start': pd.to_datetime('01101995', format='%d%m%Y'),
-    'val_end': pd.to_datetime('29092010', format='%d%m%Y')
+    'test_start': pd.to_datetime('01101995', format='%d%m%Y'),
+    'test_end': pd.to_datetime('29092010', format='%d%m%Y')
 }
-
 
 def get_args() -> Dict:
     """Parse input arguments
@@ -83,8 +82,7 @@ def get_args() -> Dict:
         type=int,
         default=-1,
         help="User-selected GPU ID - if none chosen, will default to cpu")
-    parser.add_argument(
-        '--cache_data', type=str2bool, default=True, help="If True, loads all data into memory")
+    
     parser.add_argument(
         '--num_workers', type=int, default=3, help="Number of parallel threads for data loading")
     
@@ -94,31 +92,12 @@ def get_args() -> Dict:
         default=27,
         help="Dimension of the Encoder latent space.")
   
-    parser.add_argument(
-        '--use_mse',
-        type=str2bool,
-        default=False,
-        help="If True, uses mean squared error as loss function.")
-    parser.add_argument(
-        '--n_splits',
-        type=int,
-        default=None,
-        help="Number of splits to create for cross validation")
+   
     parser.add_argument(
         '--basin_file',
         type=str,
         default=None,
         help="Path to file containing usgs basin ids. Default is data/basin_list.txt")
-    parser.add_argument(
-        '--split',
-        type=int,
-        default=None,
-        help="Defines split to use for training/testing in kFold cross validation")
-    parser.add_argument(
-        '--split_file',
-        type=str,
-        default=None,
-        help="Path to file created from the `create_splits` function.")
     
     parser.add_argument(
         '--no_static',
@@ -130,11 +109,11 @@ def get_args() -> Dict:
     cfg = vars(parser.parse_args())
 
     # Validation checks
-    if (cfg["mode"] in ["train", "create_splits"]) and (cfg["seed"] is None):
+    if (cfg["mode"] in ["train"]) and (cfg["seed"] is None):
         # generate random seed for this run
         cfg["seed"] = int(np.random.uniform(low=0, high=1e6))
 
-    if (cfg["mode"] in ["evaluate", "eval_robustness"]) and (cfg["run_dir"] is None):
+    if (cfg["mode"] in ["evaluate"]) and (cfg["run_dir"] is None):
         raise ValueError("In evaluation mode a run directory (--run_dir) has to be specified")
 
    
@@ -216,7 +195,6 @@ def _prepare_data(cfg: Dict, train_basins: List, val_basins: List) -> Dict:
     cfg["db_path"] = str(cfg["run_dir"] / "attributes.db")
     add_camels_attributes(cfg["camels_root"], db_path=cfg["db_path"])
 
-   
     return cfg
 
 
@@ -240,15 +218,9 @@ def train(cfg):
     torch.cuda.manual_seed(cfg["seed"])
     torch.manual_seed(cfg["seed"])
 
-    if cfg["split_file"] is not None:
-        with Path(cfg["split_file"]).open('rb') as fp:
-            splits = pickle.load(fp)
-        print("Split: ",cfg["split"])
-        train_basins = splits[cfg["split"]]["train"]
-        val_basins = splits[cfg["split"]]["test"]
-    else:
-        train_basins = get_basin_list()
-        val_basins = get_basin_list()
+    # get basins
+    train_basins = get_basin_list()
+    test_basins = get_basin_list()
 
     # create folder structure for this run
     cfg = _setup_run(cfg)
@@ -270,27 +242,17 @@ def train(cfg):
     train_loader = DataLoader(ds_train, batch_size=cfg["batch_size"], shuffle=True, num_workers=cfg["num_workers"])
 
     # prepare PyTorch DataLoader for validation
-    ds_val = CamelDataset(
+    ds_test = CamelDataset(
         camels_root=cfg["camels_root"],
-        dates = [cfg["val_start"], cfg["val_end"]],
-        basins=val_basins,
+        dates = [cfg["test_start"], cfg["test_end"]],
+        basins=test_basins,
         is_train=True,
         total_length=cfg["total_length"],
         db_path=cfg["db_path"],
         no_static=cfg["no_static"],
         )
     
-    val_loader = DataLoader(ds_val, batch_size=cfg["batch_size"], shuffle=False, num_workers=cfg["num_workers"])
-
-    # create model and optimizer
-    input_size_dyn = 5 
-    print("input_size_dym", input_size_dyn)
-    
-    # define loss function
-    if cfg["use_mse"]:
-        loss_func = nn.MSELoss()
-    else:
-        loss_func = NSELoss()
+    test_loader = DataLoader(ds_test, batch_size=cfg["batch_size"], shuffle=False, num_workers=cfg["num_workers"])
 
   
     ### Pytorch Lightning model
@@ -306,13 +268,13 @@ def train(cfg):
                  initial_forget_bias=cfg["initial_forget_gate_bias"],
                  layers_num = cfg["num_lstm_layers"],
                  act = nn.LeakyReLU, 
-                 loss_fn = loss_func,
+                 loss_fn = nn.MSELoss(),
                  drop_p = cfg["dropout"], 
                  warmup = cfg["warmup"],
                  seq_length = cfg["total_length"],
                  lr = cfg["learning_rate"],
                  linear = cfg["linear"],
-                 input_size_dyn = input_size_dyn,
+                 input_size_dyn = 5,
                  milestones = milestones,
                  no_static=cfg["no_static"],
                  )
@@ -321,9 +283,7 @@ def train(cfg):
     #model = Hydro_LSTM_AE.load_from_checkpoint(f"{cfg['run_dir']}/last.ckpt")
     print(model)
     logger = WandbLogger()
-    #logger.watch(model) 
-    
-    es = EarlyStopping(monitor="val_loss", mode="min", patience=2000, verbose=False)
+   
 
     checkpoint_model = ModelCheckpoint(
             save_top_k=1,
@@ -333,17 +293,17 @@ def train(cfg):
             dirpath= cfg["run_dir"],
             filename= "model-{epoch:02d}",
         )
-    
+
     # define trainer 
     torch.set_float32_matmul_precision('high')
     
     if cfg["clip_norm"]:
-        trainer = pl.Trainer(max_epochs=cfg["epochs"], callbacks=[checkpoint_model, es], accelerator=str(DEVICE), devices=1, logger=logger, gradient_clip_val=cfg["clip_value"])
+        trainer = pl.Trainer(max_epochs=cfg["epochs"], callbacks=[checkpoint_model], accelerator=str(DEVICE), devices=1, logger=logger, gradient_clip_val=cfg["clip_value"])
     else:
-        trainer = pl.Trainer(max_epochs=cfg["epochs"], callbacks=[checkpoint_model, es], accelerator=str(DEVICE), devices=1, logger=logger)
+        trainer = pl.Trainer(max_epochs=cfg["epochs"], callbacks=[checkpoint_model], accelerator=str(DEVICE), devices=1, logger=logger)
 
     torch.cuda.empty_cache()
-    trainer.fit(model=model, train_dataloaders=train_loader, val_dataloaders=val_loader)
+    trainer.fit(model=model, train_dataloaders=train_loader, val_dataloaders=test_loader)
    
 
 def evaluate(user_cfg: Dict):
@@ -358,12 +318,7 @@ def evaluate(user_cfg: Dict):
     with open(user_cfg["run_dir"] / 'cfg.json', 'r') as fp:
         run_cfg = json.load(fp)
 
-    if user_cfg["split_file"] is not None:
-        with Path(user_cfg["split_file"]).open('rb') as fp:
-            splits = pickle.load(fp)
-        basins = splits[run_cfg["split"]]["test"]
-    else:
-        basins = get_basin_list()
+    basins = get_basin_list()
 
     # get attribute means/stds from trainings dataset
     #train_file = user_cfg["run_dir"] / "data/train_data.h5"
@@ -374,22 +329,13 @@ def evaluate(user_cfg: Dict):
     #means = ds_train.get_attribute_means()
     #stds = ds_train.get_attribute_stds()
 
-    # create model and optimizer
-    input_size_dyn = 5
 
     # model name
     if run_cfg["no_static"] == False:
-        model_name = "G-STAT"
+        model_name = "CAAM"
     else:
-        model_name = f"G-AE-{run_cfg['encoded_features']}"
+        model_name = f"ENCA-{run_cfg['encoded_features']}"
   
-    #failures = [str(basin).rjust(8, "0") for basin in df_failures[model_name] if basin != 0]
-    # define loss function
-    if run_cfg["use_mse"]:
-        loss_func = nn.MSELoss()
-    else:
-        loss_func = NSELoss()
-
   
     ### Pytorch Lightning model
     model = Hydro_LSTM_AE(
@@ -403,13 +349,13 @@ def evaluate(user_cfg: Dict):
                  initial_forget_bias=run_cfg["initial_forget_gate_bias"],
                  layers_num = run_cfg["num_lstm_layers"],
                  act = nn.LeakyReLU, 
-                 loss_fn = loss_func,
+                 loss_fn = nn.MSELoss(),
                  drop_p = run_cfg["dropout"], 
                  warmup = run_cfg["warmup"],
                  seq_length = run_cfg["total_length"],
                  lr = run_cfg["learning_rate"],
                  linear = run_cfg["linear"],
-                 input_size_dyn = input_size_dyn,
+                 input_size_dyn = 5,
                  no_static=run_cfg["no_static"],
                 )
     
@@ -420,15 +366,15 @@ def evaluate(user_cfg: Dict):
     model.load_state_dict(p["state_dict"])
     
     # set data range
-    date_range = pd.date_range(start=GLOBAL_SETTINGS["val_start"] + pd.offsets.Day(run_cfg["warmup"]), end=GLOBAL_SETTINGS["val_end"])
+    date_range = pd.date_range(start=GLOBAL_SETTINGS["test_start"] + pd.offsets.Day(run_cfg["warmup"]), end=GLOBAL_SETTINGS["test_end"])
     results = {}
     results_enc = {}
 
-    
+
     # initialize test dataset
     ds_test = CamelDataset(
             camels_root=Path(run_cfg["camels_root"]),
-            dates = [pd.to_datetime(run_cfg["val_start"], format='%d%m%Y'), pd.to_datetime(run_cfg["val_end"], format='%d%m%Y')],
+            dates = [pd.to_datetime(run_cfg["test_start"], format='%d%m%Y'), pd.to_datetime(run_cfg["test_end"], format='%d%m%Y')],
             basins=basins,
             is_train=False,
             db_path = db_path,
@@ -538,75 +484,6 @@ def _store_results(user_cfg: Dict, run_cfg: Dict, results: pd.DataFrame, enc =Fa
 
     print(f"Sucessfully store results at {file_name}")
 
-
-####################
-# Cross Validation #
-####################
-
-
-def create_splits(cfg: dict):
-    """Create random k-Fold cross validation splits.
-    
-    Takes a set of basins and randomly creates n splits. The result is stored into a dictionary,
-    that contains for each split one key that contains a `train` and a `test` key, which contain
-    the list of train and test basins.
-
-    Parameters
-    ----------
-    cfg : dict
-        Dictionary containing the user entered evaluation config
-    
-    Raises
-    ------
-    RuntimeError
-        If file for the same random seed already exists.
-    FileNotFoundError
-        If the user defined basin list path does not exist.
-    """
-    output_file = (Path(__file__).absolute().parent / f'data/kfold_splits_seed{cfg["seed"]}.p')
-    # check if split file already already exists
-    if output_file.is_file():
-        raise RuntimeError(f"File '{output_file}' already exists.")
-
-    # set random seed for reproduceability
-    np.random.seed(cfg["seed"])
-
-    # read in basin file
-    if cfg["basin_file"] is not None:
-        if not Path(cfg["basin_file"]).is_file():
-            raise FileNotFoundError(f"Not file found at {cfg['basin_file']}")
-        with open(cfg["basin_file"], 'r') as fp:
-            basins = fp.readlines()
-        basins = [b.strip() for b in basins]
-        """
-        Delete some basins because of missing data:
-        - '06775500' & '06846500' no attributes
-        - '09535100' no streamflow records
-        """
-        ignore_basins = ['06775500', '06846500', '09535100']
-        basins = [b for b in basins if b not in ignore_basins]
-    else:
-        basins = get_basin_list()
-
-    # create folds
-    kfold = KFold(n_splits=cfg["n_splits"], shuffle=True, random_state=cfg["seed"])
-    kfold.get_n_splits(basins)
-
-    # dict to store the results of all folds
-    splits = defaultdict(dict)
-
-    for split, (train_idx, test_idx) in enumerate(kfold.split(basins)):
-        # further split train_idx into train/val idx into train and val set
-
-        train_basins = [basins[i] for i in train_idx]
-        test_basins = [basins[i] for i in test_idx]
-
-        splits[split] = {'train': train_basins, 'test': test_basins}
-
-    with output_file.open('wb') as fp:
-        pickle.dump(splits, fp)
-
-    print(f"Stored dictionary with basin splits at {output_file}")
 
 
 if __name__ == "__main__":

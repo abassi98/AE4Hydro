@@ -37,7 +37,7 @@ class ConvEncoder(nn.Module):
             act : activation function
             seq_len : length of input sequences 
             weight_decay : l2 regularization constant
-            linea : linear layer units
+            linear : linear layer units
         """
         super().__init__()
     
@@ -100,9 +100,7 @@ class ConvEncoder(nn.Module):
                 nn.Linear(self.linear, self.encoded_space_dim)
             )
         # # normalizing latent space layer
-        self.normalize_enc = nn.BatchNorm1d(self.encoded_space_dim, affine=False)
-
-
+        self.normalize_enc = nn.BatchNorm1d(self.encoded_space_dim, affine=True)
 
     def forward(self, x):
         x = self.first_conv(x)
@@ -112,6 +110,7 @@ class ConvEncoder(nn.Module):
         x = self.encoder_lin(x)
         x = self.normalize_enc(x)
         return x
+
 
 
 class Hydro_LSTM_AE(pl.LightningModule):
@@ -186,7 +185,7 @@ class Hydro_LSTM_AE(pl.LightningModule):
                     
         ### LSTM decoder
         if self.no_static:
-            self.lstm = nn.LSTM(input_size=1350 +self.encoded_space_dim, 
+            self.lstm = nn.LSTM(input_size=1359 +self.encoded_space_dim, 
                            hidden_size=self.lstm_hidden_units,
                            num_layers=self.layers_num,
                            batch_first=True,
@@ -200,7 +199,6 @@ class Hydro_LSTM_AE(pl.LightningModule):
                            batch_first=True,
                            dropout = self.drop_p,
                           bidirectional=self.bidirectional)
-       
        
         # reset weigths
         self.reset_weights()
@@ -243,24 +241,20 @@ class Hydro_LSTM_AE(pl.LightningModule):
 
 
     def forward(self, x, y, attr):
-        # pass x to input layer to expand memeory
-        
+        # pass x to input layer to expand capacity
         x = self.in_layer(x)
         # Encode data  
         enc = None
         if self.encoded_space_dim > 0:
             enc = self.encoder(y.squeeze(-1).unsqueeze(1)) # shape (batch_size, encoded_space_dim)
-           
             # expand dimension
             enc_expanded = enc.unsqueeze(1).expand(-1, self.seq_length, -1)
             # concat data
             x = torch.cat((x, enc_expanded),dim=-1) 
         
-    
-        # possibily concat attributes after linear layer and decoer, but before LSTM
-        if not self.no_static:
-            attr = attr.unsqueeze(1).expand(-1, self.seq_length, -1)
-            x = torch.cat((x, attr),dim=-1) 
+        # concat attributes (alway concat climate atrtibutes)
+        attr = attr.unsqueeze(1).expand(-1, self.seq_length, -1)
+        x = torch.cat((x, attr),dim=-1) 
         
         # LSTM layers
         x, _ = self.lstm(x)
@@ -276,20 +270,12 @@ class Hydro_LSTM_AE(pl.LightningModule):
         # forward pass
         _, rec = self.forward(x,y, attr)
         
-    
-        # Logging to TensorBoard by default
-        if self.loss_fn.__class__.__name__ == "MSELoss":
-            train_loss = self.loss_fn(rec[:,self.warmup:,:], y[:,self.warmup:,:])
-        else:
-            raise SyntaxError("Invalid loss function used")   
-
+        # compute loss
+        train_loss = self.loss_fn(rec[:,self.warmup:,:].squeeze(), y[:,self.warmup:,:].squeeze())
         self.log("train_loss", train_loss, on_step=True)
       
-        return train_loss #+ train_reg_loss
+        return train_loss
     
-    def on_train_epoch_end(self):
-        print("lr: ", self.lr_scheduler.get_lr())
-
     def validation_step(self, batch, batch_idx):
         ### Unpack batch
         x, y, attr= batch
@@ -297,20 +283,15 @@ class Hydro_LSTM_AE(pl.LightningModule):
         # forward pas
         _, rec = self.forward(x,y, attr)
        
-        # Logging to TensorBoard by default
-        if self.loss_fn.__class__.__name__ == "MSELoss":
-            val_loss = self.loss_fn(rec[:,self.warmup:,:], y[:,self.warmup:,:])
-        else:
-             raise SyntaxError("Invalid loss function used")
-        
-        # compute nse
+        # compute loss and nse
+        val_loss = self.loss_fn(rec[:,self.warmup:,:].squeeze(), y[:,self.warmup:,:].squeeze())
         val_nse = nse(y[:,self.warmup:,:].squeeze(), rec[:,self.warmup:,:].squeeze())
         
         # Logging to TensorBoard by default
         self.log("val_loss", val_loss, on_step=True)
         self.log("val_nse", val_nse, on_step=True)
 
-        return val_loss #+ val_reg_loss
+        return val_loss 
     
     def configure_optimizers(self):
         optimizer = optim.Adam(self.parameters(), lr = self.lr, weight_decay = self.weight_decay)

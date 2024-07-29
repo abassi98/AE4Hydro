@@ -21,12 +21,11 @@ module load gcc/9.4.0-pe5.34 miniconda3/4.12.0 lsfm-init-miniconda/1.0.0	# comme
 conda activate hydro # comment to run on your machine
 wandb offline
 
-nseeds=1
-firstseed=301
+nseeds=4
+firstseed=300
 gpu=0
 
 for (( seed = $firstseed ; seed < $((nseeds+$firstseed)) ; seed++ )); do
-    
     if [ "$1" = "enca" ]
     then
       if [ ! -d "reports/ENCA_$2/" ] 
@@ -34,8 +33,8 @@ for (( seed = $firstseed ; seed < $((nseeds+$firstseed)) ; seed++ )); do
         mkdir reports/ENCA_$2/
         mkdir runs/ENCA_$2/
       fi
-      outfile="reports/ENCA_$2/enca_nldas.$seed.out"
-      python main.py --name="ENCA-$2-$seed" --gpu=$gpu --use_mse=True --encoded_features=$2 train > $outfile
+      outfile="reports/ENCA_$2/enca_nldas_ext.$seed.out"
+      python main.py --no_static=True --name="ENCA-$2-$seed" --gpu=$gpu --encoded_features=$2 train > $outfile
     elif [ "$1" = "caam" ]
     then
       if [ ! -d "reports/CAAM_$2/" ] 
@@ -44,7 +43,7 @@ for (( seed = $firstseed ; seed < $((nseeds+$firstseed)) ; seed++ )); do
         mkdir runs/CAAM_$2/
       fi
       outfile="reports/CAAM_$2/caam_nldas.$seed.out"
-      python main.py --no_static=False --name="CAAM-$2-$seed" --gpu=$gpu --use_mse=True --encoded_features=$2 train > $outfile  
+      python main.py --no_static=False --name="CAAM-$2-$seed" --gpu=$gpu --encoded_features=$2 train > $outfile  
     else
       echo bad model choice
       exit
