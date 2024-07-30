@@ -20,7 +20,15 @@ module load gcc/9.4.0-pe5.34 miniconda3/4.12.0 lsfm-init-miniconda/1.0.0
 
 conda activate hydro
 
-python run_analysis.py LSTM $1 $2
-python analysis/main_performance.py $1 $2
+if [ "$1" = "enca" ]
+then
+    python run_analysis.py ENCA_$2 $1 $2
+    python analysis/main_performance.py $1 $2
+elif [ "$1" = "caam" ]
+then
+    python run_analysis.py CAAM_$2 $1 $2
+    python analysis/main_performance.py $1 $2
+
+
 
 

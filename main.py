@@ -5,7 +5,6 @@ import json
 import pickle
 import random
 import glob
-from collections import defaultdict
 from pathlib import Path, PosixPath
 from typing import Dict, List, Tuple
 import numpy as np
@@ -14,20 +13,13 @@ import torch
 import torch.nn as nn
 import pytorch_lightning as pl
 from pytorch_lightning.callbacks import ModelCheckpoint
-from sklearn.model_selection import KFold
 from torch.utils.data import DataLoader
 from tqdm import tqdm
-from pytorch_lightning.callbacks.early_stopping import EarlyStopping
 import wandb
 from pytorch_lightning.loggers import WandbLogger
-
-
 from src.datasets import CamelDataset
 from src.datautils import add_camels_attributes, rescale_features, normalize_features
-#from papercode.models import Hydro_LSTM
-from src.nseloss import NSELoss
 from src.utils import get_basin_list, str2bool
-
 from src.models import Hydro_LSTM_AE
 
 
@@ -226,7 +218,7 @@ def train(cfg):
     cfg = _setup_run(cfg)
     
     # prepare static atributes
-    cfg = _prepare_data(cfg=cfg, train_basins=train_basins, val_basins=val_basins)
+    cfg = _prepare_data(cfg=cfg, train_basins=train_basins, val_basins=test_basins)
 
     # prepare PyTorch DataLoader for training
     ds_train = CamelDataset(
@@ -478,7 +470,7 @@ def _store_results(user_cfg: Dict, run_cfg: Dict, results: pd.DataFrame, enc =Fa
         with (file_name).open('wb') as fp:
             pickle.dump(results, fp)
     else:
-        file_name = user_cfg["run_dir"] / f"lstm_ae_static_seed{run_cfg['seed']}.p"
+        file_name = user_cfg["run_dir"] / f"results_seed{run_cfg['seed']}.p"
         with (file_name).open('wb') as fp:
             pickle.dump(results, fp)
 

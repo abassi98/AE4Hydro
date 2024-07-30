@@ -8,7 +8,7 @@ from typing import Dict
 
 from performance_functions import (baseflow_index, bias, flow_duration_curve,
                                    get_quant, high_flows, low_flows, nse, abs_nse, sqrt_nse, FHV,
-                                   stdev_rat, log_stdev_rat, zero_freq, FLV, FMM, kge, bias_RR)
+                                   stdev_rat, log_stdev_rat, zero_freq, FLV, FMM, kge, bias_RR, r_coeff, bias_std)
 
 # file name of ensemble dictionary is a user input
 experiment = sys.argv[1]
@@ -46,7 +46,8 @@ def compute_performance(ens_dict : Dict, experiment : str) -> None:
         e_kge = kge(ens_dict[basin])
         e_fmm = FMM(ens_dict[basin])
         e_RR = bias_RR(ens_dict[basin])
-        
+        e_r = r_coeff(ens_dict[basin])
+        e_bias_std = bias_std(ens_dict[basin])
 
         # add ensemble mean stats to globaldictionary
         stats.append({
@@ -76,19 +77,22 @@ def compute_performance(ens_dict : Dict, experiment : str) -> None:
             'FMM' : e_fmm,
             'bias_RR' : e_RR,
             'log_stdev' : e_log_stdev_rat,
+            'r_coeff' : e_r,
+            'bias_std' : e_bias_std
         })
 
-
+        print("NSE: ", e_kge)
         # print basin-specific stats
         bdex = bdex + 1
-        print(f"{basin} ({bdex} of {len(ens_dict)}) --- NSE: {stats[bdex]['nse']} --- mNSE: {stats[bdex]['abs_nse']} --- FHV: {stats[bdex]['FHV']}")
+        print(f"{basin} ({bdex} of {len(ens_dict)}) --- NSE: {stats[bdex]['nse']} --- R_coeff: {stats[bdex]['r_coeff']} --- BIAS_STD: {stats[bdex]['bias_std']} --- STDV: {stats[bdex]['stdev']}")
        
 
     # save ensemble stats as a csv file
     stats = pd.DataFrame(stats,
                         columns=[
                             'basin', 'nse', 'bias', 'stdev', 'obs5', 'sim5', 'obs95', 'sim95', 'obs0',
-                            'sim0', 'obsL', 'simL', 'obsH', 'simH', 'obsFDC', 'simFDC','obsBF', 'simBF', 'abs_nse', 'sqrt_nse', 'FHV', 'FLV', 'kge', 'FMM', 'bias_RR', 'log_stdev',
+                            'sim0', 'obsL', 'simL', 'obsH', 'simH', 'obsFDC', 'simFDC','obsBF', 'simBF', 
+                            'abs_nse', 'sqrt_nse', 'FHV', 'FLV', 'kge', 'FMM', 'bias_RR', 'log_stdev', 'r_coeff','bias_std'
                         ])
     fname = f"analysis/stats/{experiment}_{encoded_features}.csv"
     stats.to_csv(fname)
@@ -98,7 +102,7 @@ def compute_performance(ens_dict : Dict, experiment : str) -> None:
     print('Median NSE: ', stats['nse'].median())
     print('Num Failures: ', np.sum((stats['nse'] < 0).values.ravel()))
 
-    # compute seed specifi statistics
+    # compute seed specific statistics
     for seed in range(initial_seed, initial_seed+num_seeds):
         stats_seed = []
         for basin in ens_dict:
@@ -123,7 +127,8 @@ def compute_performance(ens_dict : Dict, experiment : str) -> None:
             e_kge = kge(df_seed)
             e_fmm = FMM(df_seed)
             e_RR = bias_RR(df_seed)
-            
+            e_r  = r_coeff(df_seed)
+            e_bias_std = bias_std(df_seed)
 
             # add ensemble mean stats to globaldictionary
             stats_seed.append({
@@ -153,13 +158,16 @@ def compute_performance(ens_dict : Dict, experiment : str) -> None:
                 'FMM' : e_fmm,
                 'bias_RR' : e_RR,
                 'log_stdev' : e_log_stdev_rat,
+                'r_coeff' : e_r,
+                'bias_std' : e_bias_std
             })
 
         # save stats seed as a csv file
         stats_seed = pd.DataFrame(stats_seed,
                         columns=[
                             'basin', 'nse', 'bias', 'stdev', 'obs5', 'sim5', 'obs95', 'sim95', 'obs0',
-                            'sim0', 'obsL', 'simL', 'obsH', 'simH', 'obsFDC', 'simFDC','obsBF', 'simBF', 'abs_nse', 'sqrt_nse', 'FHV', 'FLV', 'kge', 'FMM', 'bias_RR', 'log_stdev',
+                            'sim0', 'obsL', 'simL', 'obsH', 'simH', 'obsFDC', 'simFDC','obsBF', 'simBF',
+                            'abs_nse', 'sqrt_nse', 'FHV', 'FLV', 'kge', 'FMM', 'bias_RR', 'log_stdev', 'r_coeff','bias_std'
                         ])
         fname = f"analysis/stats/{experiment}_{encoded_features}_{seed}.csv"
         stats_seed.to_csv(fname)

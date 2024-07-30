@@ -17,5 +17,4 @@ dependencies:
     - geopandas
     - seaborn
     - wandb
-    - umap-learn
-    - dadapy
+    

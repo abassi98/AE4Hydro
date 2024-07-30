@@ -10,44 +10,10 @@ import pandas as pd
 from tqdm import tqdm
 from typing import List
 
-from src.datasets import CamelDataset
+from src.datasets import CamelsTXT, CamelDataset
 from torch.utils.data import DataLoader
-
-
-#from LSTM_AE_main import GLOBAL_SETTINGS
-
-# fixed settings for all experiments
-GLOBAL_SETTINGS = {
-    'batch_size': 2000,
-    'clip_norm': True,
-    'clip_value': 1,
-    'dropout': 0.4,
-    'epochs': 30,
-    'hidden_size': 256,
-    'initial_forget_gate_bias': 5,
-    'log_interval': 50,
-    'learning_rate': 1e-3,
-    'seq_length': 400,
-    "linear" : 512,
-    'train_start': pd.to_datetime('01101980', format='%d%m%Y'),
-    'train_end': pd.to_datetime('30091995', format='%d%m%Y'),
-    'val_start': pd.to_datetime('01101995', format='%d%m%Y'),
-    'val_end': pd.to_datetime('29092010', format='%d%m%Y')
-}
-def get_basin_list() -> List:
-    """Read list of basins from text file.
-    
-    Returns
-    -------
-    List
-        List containing the 8-digit basin code of all basins
-    """
-    basin_file = Path(__file__).absolute().parent.parent / "MultiBasinHydro2/data/basin_list2.txt"
-    with basin_file.open('r') as fp:
-        basins = fp.readlines()
-    basins = [basin.strip() for basin in basins]
-    return basins
-
+from ..main.py import GLOBAL_SETTINGS
+from ..src.utils import get_basin_list
 
 
 

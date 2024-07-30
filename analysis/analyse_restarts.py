@@ -3,6 +3,7 @@ import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 import seaborn as sns
+from ..src.utils import clean_and_capitalize
 
 def get_args():
     """Parse input arguments
@@ -17,70 +18,19 @@ def get_args():
     parser.add_argument(
         '--experiment',
         type=str,
-        default="global_lstm_ae",)
-   
+        default="enca",)
 
     cfg = vars(parser.parse_args())
     return cfg
 
-def clean_and_capitalize(input_string):
-    # Split the input string into words
-    words = input_string.split("_")
-    out = ""
-    
 
-
-    for w in words:
-        if w=="gages2":
-             w="Catchment"
-        if w=="freq":
-             w="Frequency"
-        if w=="dur":
-             w="Duration"
-        if w=="elev":
-             w="Elevation"
-        if w=="prec" or w=="p":
-            w="Prec"
-        if w=="frac":
-            w="Fraction"
-        if w=="geol":
-            w="Geological"
-        w = w.capitalize()
-        if w=="Nse":
-             w = "NSE"
-        if w=="Forest":
-            w="of Forest"
-        if w=="Snow":
-            w="of Snow"
-        if w=="Statsgo":
-            w="(STATSGO)"
-        if w=="Pelletier":
-             w="(Pelletier)"
-        if w=="Pet":
-            w="PET"
-        if w=="Elas":
-            w="ELAS"
-        if w=="Fdc":
-             w="FDC"
-        if w=="Gvf":
-             w="GVF"
-        if w=="Aridity":
-             w="Aridity Index"
-        if w=="Hfd":
-             w="HFD"
-        if w=="Lai":
-             w="LAI"
-        out += w
-        out += " "
-
-    return out
 if __name__ == '__main__':
     ##########################################################
     # Load encoded features of chosen LSTM-AE model
     ##########################################################
     # Load encoded features
     cfg = get_args()
-    encoded_features_vec = [0,3,27]
+    encoded_features_vec = [0,3,5,27]
     experiment = cfg["experiment"]
     initseed = 300
     nseeds = 4
@@ -114,6 +64,6 @@ if __name__ == '__main__':
     
     #cbar = fig.colorbar(g, ax=ax, orientation='vertical', shrink=0.6)
     fig.tight_layout()
-    fig.savefig(f"analysis/figures/restarts.png")
+    fig.savefig(f"analysis/figures/restarts.png", dpi=300)
 
     

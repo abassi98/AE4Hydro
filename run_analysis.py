@@ -19,23 +19,27 @@ gpu = -1
 # This loop will run the evaluation procedure for all splits of all ensembles
 for seed in range(firstSeed, firstSeed + nSeeds):  # loop through randomized ensembles
     # get the correct run directory by reading the screen report
-    fname = f"reports/{folder}/{experiment}_nldas.{seed}.out"
+    fname = f"reports/{folder}/{experiment}_nldas_ext.{seed}.out"
     f = open(fname)
     lines = f.readlines()
     print(f"Working on seed: {seed} -- file: {fname}")
-    run_dir = lines[33].split('AE4Hydro/')[1].split('attributes')[0]
+    # retrieve run_dir
+    for line in lines:
+        if line.startswith("Sucessfully stored basin attributes"):
+            run_dir = line.split('in ')[1].split('attributes')[0]
+    
     run_command = f"python main.py --gpu={gpu} --run_dir={run_dir} evaluate"
 
     # run command
     os.system(run_command)
     
     # grab the test output file for this split
-    results_file = glob.glob(f"{run_dir}/*lstm*seed*.p")[0]
+    results_file = glob.glob(f"{run_dir}/results*seed*.p")[0]
     with open(results_file, 'rb') as f:
         partial_dict = pickle.load(f)
 
     if encoded_features > 0:
-        results_file_enc = glob.glob(f"{run_dir}/*encoded*seed*.p")[0]
+        results_file_enc = glob.glob(f"{run_dir}/encoded*seed*.p")[0]
         with open(results_file_enc, 'rb') as f:
             partial_dict_enc = pickle.load(f)
        
@@ -55,8 +59,7 @@ for seed in range(firstSeed, firstSeed + nSeeds):  # loop through randomized ens
             seed_dict_enc[basin].rename(columns={ 0 : seed}, inplace=True)
             
        
-    
-    if seed == 300: 
+    if seed == firstSeed: 
         ens_dict = seed_dict
         if encoded_features > 0:
             ens_dict_enc = seed_dict_enc
@@ -93,7 +96,7 @@ with open(fname, 'wb') as f:
     pickle.dump(ens_dict, f, protocol=pickle.HIGHEST_PROTOCOL)
 
 # save the encoded features as a pickle
-if "ae" in experiment and encoded_features > 0:
+if encoded_features > 0:
     fname = f"analysis/results_data/encoded_{experiment}_{encoded_features}.pkl"
     with open(fname, 'wb') as f:
         pickle.dump(ens_dict_enc, f, protocol=pickle.HIGHEST_PROTOCOL)

@@ -51,6 +51,16 @@ def bias(df):
     obs = df["qobs"][idex].mean()
     return (sim - obs) / obs
 
+def bias_std(df):
+    """
+    Gupta et al., 2009
+    """
+    idex = df["qsim"].index[(df["qsim"] >= 0) & (df["qobs"] >= 0)].tolist()
+    sim = df["qsim"][idex].mean()
+    obs = df["qobs"][idex].mean()
+    std_obs = df["qobs"][idex].std()
+    return (sim - obs) / std_obs
+
 def bias_RR(df):
     """
     Yilmaz et al., 2008

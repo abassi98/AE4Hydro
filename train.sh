@@ -42,7 +42,7 @@ for (( seed = $firstseed ; seed < $((nseeds+$firstseed)) ; seed++ )); do
         mkdir reports/CAAM_$2/
         mkdir runs/CAAM_$2/
       fi
-      outfile="reports/CAAM_$2/caam_nldas.$seed.out"
+      outfile="reports/CAAM_$2/caam_nldas_ext.$seed.out"
       python main.py --no_static=False --name="CAAM-$2-$seed" --gpu=$gpu --encoded_features=$2 train > $outfile  
     else
       echo bad model choice
