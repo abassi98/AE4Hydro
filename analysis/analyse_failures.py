@@ -6,9 +6,6 @@ experiment = "enca"
 threshold = 0.0
 def evaluate():
     basins = get_basin_list()
-    keep = CLIM_NAMES+ HYDRO_NAMES + LANDSCAPE_NAMES 
-    df_AS = load_attributes("../data/attributes.db", basins, keep_attributes=keep)
-    
     # retireve models
     encoded_features = [2,3,5,27]
     

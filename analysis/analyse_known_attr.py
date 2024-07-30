@@ -2,9 +2,9 @@
 import numpy as np
 import matplotlib.pyplot as plt
 import seaborn as sns
-from src.utils import get_basin_list
-from src.datautils import load_attributes, CLIM_NAMES, LANDSCAPE_NAMES, HYDRO_NAMES
-from src.utils import clean_and_capitalize
+from ..src.utils import get_basin_list
+from ..src.datautils import load_attributes, CLIM_NAMES, LANDSCAPE_NAMES, HYDRO_NAMES
+from ..src.utils import clean_and_capitalize
 
 def plot():
     basins = get_basin_list()

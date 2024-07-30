@@ -1,7 +1,6 @@
 
 import pickle
 import sys
-
 import numpy as np
 import pandas as pd
 from typing import Dict
@@ -17,7 +16,7 @@ initial_seed = 300
 num_seeds = 4
 
 # load ensemble file
-fname = f"analysis/results_data/{experiment}_{encoded_features}.pkl"
+fname = f"results_data/{experiment}_{encoded_features}.pkl"
 with open(fname, 'rb') as f:
     ens_dict = pickle.load(f)
 
@@ -94,8 +93,8 @@ def compute_performance(ens_dict : Dict, experiment : str) -> None:
                             'sim0', 'obsL', 'simL', 'obsH', 'simH', 'obsFDC', 'simFDC','obsBF', 'simBF', 
                             'abs_nse', 'sqrt_nse', 'FHV', 'FLV', 'kge', 'FMM', 'bias_RR', 'log_stdev', 'r_coeff','bias_std'
                         ])
-    fname = f"analysis/stats/{experiment}_{encoded_features}.csv"
-    stats.to_csv(fname)
+
+    stats.to_csv(f"stats/{experiment}_{encoded_features}.csv")
 
     # print to screen
     print('Mean NSE: ', stats['nse'].mean())
@@ -169,7 +168,7 @@ def compute_performance(ens_dict : Dict, experiment : str) -> None:
                             'sim0', 'obsL', 'simL', 'obsH', 'simH', 'obsFDC', 'simFDC','obsBF', 'simBF',
                             'abs_nse', 'sqrt_nse', 'FHV', 'FLV', 'kge', 'FMM', 'bias_RR', 'log_stdev', 'r_coeff','bias_std'
                         ])
-        fname = f"analysis/stats/{experiment}_{encoded_features}_{seed}.csv"
-        stats_seed.to_csv(fname)
+        
+        stats_seed.to_csv(f"stats/{experiment}_{encoded_features}_{seed}.csv")
 
 compute_performance(ens_dict, experiment)

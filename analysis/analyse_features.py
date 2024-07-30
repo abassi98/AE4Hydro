@@ -5,10 +5,9 @@ import geopandas as gpd
 import matplotlib.pyplot as plt
 import seaborn as sns
 import pickle
+from sklearn.decomposition import PCA
 from ..src.datautils import load_attributes, CLIM_NAMES, HYDRO_NAMES, LANDSCAPE_NAMES
 from ..src.utils import clean_and_capitalize, get_basin_list, str2bool
-from dadapy import data
-from sklearn.decomposition import PCA
 
 
 def get_args():
@@ -41,22 +40,10 @@ def get_args():
     parser.add_argument(
         '--experiment',
         type=str,
-        default="global_lstm_ae_clim_atrue",)
-   
+        default="enca",)
     
     cfg = vars(parser.parse_args())
     return cfg
-
-
-def compute_ids_scaling(X, range_max = 2048, N_min = 20):
-    "instantiate data class"
-    _data = data.Data(coordinates = X,
-                     maxk = 100)
-    "compute ids scaling gride"
-    ids_gride, ids_err_gride, rs_gride = _data.return_id_scaling_gride(range_max=range_max)
-    "compute ids with twoNN + decimation"
-    ids_twoNN, ids_err_twoNN, rs_twoNN = _data.return_id_scaling_2NN(N_min = N_min)
-    return ids_gride, ids_twoNN, rs_gride, rs_twoNN
 
 
 
@@ -70,9 +57,9 @@ if __name__ == '__main__':
     nseeds = cfg["nseeds"]
     encoded_features = cfg["encoded_features"]
     experiment = cfg["experiment"]
-    stats = pd.read_csv(f"analysis/stats/{experiment}_{encoded_features}.csv", sep=",")
+    stats = pd.read_csv(f"stats/{experiment}_{encoded_features}.csv", sep=",")
     stats.index = [str(s).rjust(8,"0") for s in stats.loc[:,"basin"]]
-    with open(f"analysis/results_data/encoded_{experiment}_{encoded_features}.pkl", 'rb') as f:
+    with open(f"results_data/encoded_{experiment}_{encoded_features}.pkl", 'rb') as f:
             dict_enc = pickle.load(f)
     
     basins = [b for b in dict_enc.keys()]
@@ -80,13 +67,13 @@ if __name__ == '__main__':
     # get basins
     basins = get_basin_list()
     # load attributes with right order
-    keep = CLIM_NAMES+ HYDRO_NAMES + LANDSCAPE_NAMES +  ["gauge_lat", "gauge_lon"]
-    df_S = load_attributes("data/attributes.db", basins, keep_attributes=keep)
+    keep = CLIM_NAMES + HYDRO_NAMES + LANDSCAPE_NAMES +  ["gauge_lat", "gauge_lon"]
+    df_S = load_attributes("../data/attributes.db", basins, keep_attributes=keep)
     lat = df_S["gauge_lat"]
     lon = df_S["gauge_lon"]
     df_S = df_S.drop(["gauge_lat", "gauge_lon"], axis=1)
     # Load the US states shapefile from GeoPandas datasets
-    us_states = gpd.read_file('data/usa-states-census-2014.shp')
+    us_states = gpd.read_file('../data/usa-states-census-2014.shp')
 
     
     # plot first seed
@@ -111,7 +98,7 @@ if __name__ == '__main__':
         print(f"Std features: ", np.std(enc, 0))
         columns = [f"enc_{i+1}_{seed}" for i in range(encoded_features)]
         df_E_seed = pd.DataFrame(enc, index=basins, columns = columns)
-        df_E_seed.to_csv(f"encoded/encoded_{experiment}_{encoded_features}_{seed}.csv", sep=" ")
+        df_E_seed.to_csv(f"encoded_{experiment}_{encoded_features}_{seed}.csv", sep=" ")
         #enc = np.array(umap.UMAP(n_components=encoded_features, n_neighbors=500).fit_transform(enc))
         if cfg["with_pca"]:
             pca = PCA(n_components=encoded_features, svd_solver='full')
@@ -155,7 +142,7 @@ if __name__ == '__main__':
      # Colorbar
     cbar = fig.colorbar(im, ax=axs, orientation='vertical', fraction=0.025, pad=0.04)
     cbar.ax.tick_params(labelsize=15)
-    fig.savefig(f"analysis/figures/pca_{experiment}_{encoded_features}.png", dpi=300)
+    fig.savefig(f"figures/pca_{experiment}_{encoded_features}.png", dpi=300)
 
     # CONCAT
     new_order = []
@@ -202,7 +189,6 @@ if __name__ == '__main__':
     g.set_xticklabels(range(1,keep+1), rotation = 0, fontsize=15)
     g.set_yticklabels(g.get_yticklabels(), rotation = 0, fontsize=15)
     g.set_xlabel("Relevant Features Principal Components", fontsize=15)
-    file_corr = f"analysis/figures/ES_spearman_{experiment}_ef{encoded_features}.png"
     fig.tight_layout()
-    fig.savefig(file_corr, dpi=300)
+    fig.savefig(f"figures/ES_spearman_{experiment}_ef{encoded_features}.png", dpi=300)
     

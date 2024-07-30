@@ -43,9 +43,9 @@ if __name__ == '__main__':
         for seed in range(initseed, initseed+nseeds):
             # plot nse on the CONUS
             if encoded_features == 0:
-                stats = pd.read_csv(f"analysis/stats/{experiment}_stat_{encoded_features}_{seed}.csv", sep=",")
+                stats = pd.read_csv(f"stats/{experiment}_{encoded_features}_{seed}.csv", sep=",")
             else:
-                stats = pd.read_csv(f"analysis/stats/{experiment}_{encoded_features}_{seed}.csv", sep=",")
+                stats = pd.read_csv(f"stats/{experiment}_{encoded_features}_{seed}.csv", sep=",")
             stats.index = [str(s).rjust(8,"0") for s in stats.loc[:,"basin"]]
             nse = stats["nse"]
             df[seed] = nse
@@ -64,6 +64,6 @@ if __name__ == '__main__':
     
     #cbar = fig.colorbar(g, ax=ax, orientation='vertical', shrink=0.6)
     fig.tight_layout()
-    fig.savefig(f"analysis/figures/restarts.png", dpi=300)
+    fig.savefig(f"figures/restarts.png", dpi=300)
 
     
