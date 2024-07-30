@@ -2,14 +2,14 @@
 import numpy as np
 import matplotlib.pyplot as plt
 import seaborn as sns
-from ..src.utils import get_basin_list
-from ..src.datautils import load_attributes, CLIM_NAMES, LANDSCAPE_NAMES, HYDRO_NAMES
-from ..src.utils import clean_and_capitalize
+from src.utils import get_basin_list
+from src.datautils import load_attributes, CLIM_NAMES, LANDSCAPE_NAMES, HYDRO_NAMES
+from src.utils import clean_and_capitalize
 
 def plot():
     basins = get_basin_list()
     keep = CLIM_NAMES + HYDRO_NAMES + LANDSCAPE_NAMES 
-    df_S = load_attributes("../data/attributes.db", basins, keep_attributes=keep)
+    df_S = load_attributes("data/attributes.db", basins, keep_attributes=keep)
     
     ### plot correalation matrix ES Spearman 
     fig, axs = plt.subplots(1,1, figsize=(25,20))
@@ -53,7 +53,7 @@ def plot():
     fig.text(0.75, 0.002, "Vege.", fontsize=22, rotation="horizontal")
    
     fig.tight_layout()
-    fig.savefig("figures/KnownAttributes_spearman.png", dpi=300)
+    fig.savefig("analysis/figures/KnownAttributes_spearman.png", dpi=300)
 
 if __name__=="__main__":
     plot()

@@ -3,7 +3,6 @@ import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 import seaborn as sns
-from ..src.utils import clean_and_capitalize
 
 def get_args():
     """Parse input arguments
@@ -37,21 +36,21 @@ if __name__ == '__main__':
     fig, ax = plt.subplots(2,2, sharey=True)
     # plot nse AE vs STAT colore with all the attributes
     for ind, encoded_features in enumerate(encoded_features_vec):
-        i = ind % 2
-        j = ind // 2
+        j = ind % 2
+        i = ind // 2
         df = pd.DataFrame()
         for seed in range(initseed, initseed+nseeds):
             # plot nse on the CONUS
             if encoded_features == 0:
-                stats = pd.read_csv(f"stats/{experiment}_{encoded_features}_{seed}.csv", sep=",")
+                stats = pd.read_csv(f"analysis/stats/caam_{encoded_features}_{seed}.csv", sep=",")
             else:
-                stats = pd.read_csv(f"stats/{experiment}_{encoded_features}_{seed}.csv", sep=",")
+                stats = pd.read_csv(f"analysis/stats/{experiment}_{encoded_features}_{seed}.csv", sep=",")
             stats.index = [str(s).rjust(8,"0") for s in stats.loc[:,"basin"]]
             nse = stats["nse"]
             df[seed] = nse
 
         df.index = np.arange(1,569)
-        g = sns.heatmap(df.transpose().clip(-1,1), vmin=-1, vmax=1, cmap="YlOrRd", ax=ax[i,j], annot=False)
+        g = sns.heatmap(df.transpose().clip(-1,1), vmin=-1, vmax=1, cmap="viridis", ax=ax[i,j], annot=False)
         ax[i,j].set_xticks([100,200,300,400,500])
         g.set_xticklabels(["100","200","300","400","500"], rotation = 0, fontsize=10)
         g.set_yticklabels(["1","2","3", "4"], rotation = 0, fontsize=10)
@@ -64,6 +63,6 @@ if __name__ == '__main__':
     
     #cbar = fig.colorbar(g, ax=ax, orientation='vertical', shrink=0.6)
     fig.tight_layout()
-    fig.savefig(f"figures/restarts.png", dpi=300)
+    fig.savefig(f"analysis/figures/restarts.png", dpi=300)
 
     

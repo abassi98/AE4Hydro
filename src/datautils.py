@@ -10,22 +10,22 @@ from numba import njit
 
 
 CLIM_NAMES = [
-    'p_mean', 'pet_mean', 'frac_snow','aridity', 'high_prec_freq', 'high_prec_dur', 
+    'p_mean', 'pet_mean', 'p_seasonality', 'frac_snow','aridity', 'high_prec_freq', 'high_prec_dur', 
     'low_prec_freq', 'low_prec_dur'
 ]
 
 LANDSCAPE_NAMES = [
+     'elev_mean', 'slope_mean', 'area_gages2', # topographical 
+     'carbonate_rocks_frac',  'geol_permeability', # geological
     'soil_depth_pelletier', 'soil_depth_statsgo', 'soil_porosity', 'soil_conductivity',
-    'max_water_content', 'sand_frac', 'silt_frac', 'clay_frac', 
-     'carbonate_rocks_frac',  'geol_permeability',
-     'frac_forest', 'lai_max', 'lai_diff', 'gvf_max', 'gvf_diff',
-     'elev_mean', 'slope_mean', 'area_gages2'
+    'max_water_content', 'sand_frac', 'silt_frac', 'clay_frac', # soil
+     'frac_forest', 'lai_max', 'lai_diff', 'gvf_max', 'gvf_diff', # vegetation
     ]
     
 HYDRO_NAMES = [
-    'q_mean', 'runoff_ratio', 'stream_elas', 'slope_fdc',
-    'baseflow_index', 'hfd_mean', 'q5', 'q95', 'high_q_freq', 'high_q_dur', 'low_q_freq',
-    'low_q_dur'
+    'q_mean', 'runoff_ratio','slope_fdc','baseflow_index', 'stream_elas', 
+     'q5', 'q95',  'high_q_freq', 'high_q_dur', 'low_q_freq',
+    'low_q_dur','hfd_mean'
 ]
 
 

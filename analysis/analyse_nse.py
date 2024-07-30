@@ -35,19 +35,19 @@ if __name__ == '__main__':
     # Load encoded features
     cfg = get_args()
     encoded_features_vec = [1,2,3,5,27]
-    us_states = gpd.read_file('../data/usa-states-census-2014.shp')
+    us_states = gpd.read_file('data/usa-states-census-2014.shp')
     experiment = cfg["experiment"]
 
-    stat_caam = pd.read_csv(f"stats/caam_0.csv", sep=",")
+    stat_caam = pd.read_csv(f"analysis/stats/caam_0.csv", sep=",")
     stat_caam.index = [str(s).rjust(8,"0") for s in stat_caam.loc[:,"basin"]]
     basins = stat_caam.index
     num_basins = stat_caam.shape[0]
 
 
     # load attributes
-    camels_root = PosixPath("../data/basin_dataset_public_v1p2/")
+    camels_root = PosixPath("data/basin_dataset_public_v1p2/")
     keep = CLIM_NAMES+ HYDRO_NAMES + LANDSCAPE_NAMES +  ["gauge_lat", "gauge_lon"]
-    df_S = load_attributes("../data/attributes.db", stat_caam.index, keep_attributes=keep)
+    df_S = load_attributes("data/attributes.db", stat_caam.index, keep_attributes=keep)
     # insert lat and lon in encoded attributes
     lon = df_S["gauge_lon"]
     lat = df_S["gauge_lat"]
@@ -77,7 +77,7 @@ if __name__ == '__main__':
     # retrieve NSE
     for i in range(len(encoded_features_vec)):
         # plot nse on the CONUS
-        stats = pd.read_csv(f"stats/{experiment}_{encoded_features_vec[i]}.csv", sep=",")
+        stats = pd.read_csv(f"analysis/stats/{experiment}_{encoded_features_vec[i]}.csv", sep=",")
         stats.index = [str(s).rjust(8,"0") for s in stats.loc[:,"basin"]]
         nse = stats["nse"]
 
@@ -103,7 +103,7 @@ if __name__ == '__main__':
     ax.set_xticks(ticks, labels, fontsize=20, rotation=90 )
     ax.set_ylabel("NSE", rotation=90, fontweight="bold", fontsize=25)
     ax.set_ylim([-0.2,1])
-    fig.savefig("figures/boxplot_NSE.png", dpi = 300)
+    fig.savefig("analysis/figures/boxplot_NSE.png", dpi = 300)
 
     ### plot metrics (R, BIAS,LOG-STDEV)
     fig, ax = plt.subplots(1,3, figsize=(20,6))
@@ -134,7 +134,7 @@ if __name__ == '__main__':
     ax[2].set_ylabel("STDEV", rotation=90, fontweight="bold", fontsize=25)
     ax[2].set_ylim([0,1.5])
     fig.tight_layout()
-    fig.savefig("figures/boxplots.png", dpi = 300)
+    fig.savefig("analysis/figures/boxplots.png", dpi = 300)
 
     # print latex table
     df_NSE_des = df_NSE.describe(percentiles=[.05,.25, .5, .75, .95]).round(2).loc[["mean", "min", "5%", "25%", "50%", "75%","95%", "max"],:].rename({"mean":" & Mean", "min":"& Min","5%":"& Q5", "25%":"& Q25", "50%":"\\textbf{NSE} & Median", "75%":"& Q75", "95%":"& Q95", "max":"& Max"}, axis=0)

@@ -1,6 +1,6 @@
 
 
-from pathlib import Path, PosixPath
+from pathlib import Path
 from typing import List
 import warnings 
 import argparse
@@ -8,8 +8,6 @@ from pytorch_lightning import Callback
 import os 
 import torch
 import copy
-
-from .datasets import CamelsTXT
 from torch.optim.lr_scheduler import _LRScheduler
 
 def get_basin_list() -> List:
@@ -155,7 +153,8 @@ def clean_and_capitalize(input_string):
              w="HFD"
         if w=="Lai":
              w="LAI"
-        
+        if w=="Runoff":
+            w="Streamflow"
         out += w
         out += " "
 
