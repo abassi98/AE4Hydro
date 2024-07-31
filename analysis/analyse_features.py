@@ -94,8 +94,8 @@ if __name__ == '__main__':
             enc = np.concatenate((enc, np.expand_dims(dict_enc[key][seed],axis=0)), axis=0)
 
         # print stats
-        print(f"Mean features: ", np.mean(enc, 0))
-        print(f"Std features: ", np.std(enc, 0))
+        print(f"Mean features: ", np.mean(enc, 0).round(2))
+        print(f"Std features: ", np.std(enc, 0).round(2))
         columns = [f"enc_{i+1}_{seed}" for i in range(encoded_features)]
         df_E_seed = pd.DataFrame(enc, index=basins, columns = columns)
         df_E_seed.to_csv(f"analysis/encoded/encoded_{experiment}_{encoded_features}_{seed}.csv", sep=" ")
