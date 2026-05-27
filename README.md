@@ -1,5 +1,4 @@
 # AE4Hydro  
-### Learning Landscape Features from Streamflow with Autoencoders
 
 Repository accompanying the publication:
 
