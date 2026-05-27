@@ -162,7 +162,4 @@ DOI = {10.5194/hess-28-4971-2024}
 }
 ```
 
-Paper:
-
-https://hess.copernicus.org/articles/28/4971/2024/
 
