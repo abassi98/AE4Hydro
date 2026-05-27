@@ -1,12 +1,6 @@
 # AE4Hydro  
 ### Learning Landscape Features from Streamflow with Autoencoders
 
-<p align="center">
-  <a href="https://arxiv.org/abs/2505.12096">
-    <img src="https://doi.org/10.5194/hess-28-4971-2024">
-  </a>
-</p>
-
 Repository accompanying the publication:
 
 > **Learning landscape features from streamflow with autoencoders**  
