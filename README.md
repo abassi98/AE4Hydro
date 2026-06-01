@@ -56,24 +56,32 @@ AE4Hydro/
 
 ---
 
+
+## Setup environment
+
+```bash
+conda env create -f environment.yml
+conda activate ae4hydro
+```
+
+
 ## Training
 
 Launch training using:
 
 ```bash
-bash train.sh
+bash train.sh $model $encoded_features
 ```
 
-or directly:
-
-```bash
-python main.py
-```
-
-Training outputs are stored under:
+Training folders are stored under:
 
 ```text
 runs/
+```
+
+And report files with training specifics in the folder
+```text
+reports/
 ```
 
 ---
@@ -83,26 +91,20 @@ runs/
 After training, run:
 
 ```bash
-bash run_analysis.sh
+bash run_analysis.sh $model $encoded_features
 ```
 
-or:
-
-```bash
-python run_analysis.py
-```
-
-Generated outputs and visualizations are stored in:
+Which will generate streamflow predictions and encoded features, stored in:
 
 ```text
-reports/
+analysis/results_data/
 ```
 
 ---
 
 ## Data
 
-Input datasets and processed files should be placed under:
+Download the CAMELS-US dataset from https://doi.org/10.5065/D6MW2F4D and place it in:
 
 ```text
 data/
@@ -110,37 +112,6 @@ data/
 
 Dataset preparation and preprocessing logic are implemented within the project source code.
 
----
-
-## Reproducing the Paper
-
-To reproduce the experiments:
-
-### 1. Setup environment
-
-```bash
-conda env create -f environment.yml
-conda activate AE4Hydro
-```
-
-### 2. Train model
-
-```bash
-bash train.sh
-```
-
-### 3. Run evaluation
-
-```bash
-bash run_analysis.sh
-```
-
-### 4. Inspect outputs
-
-```text
-reports/
-runs/
-```
 
 ---
 
