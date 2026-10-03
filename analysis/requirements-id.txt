@@ -1,0 +1,2 @@
+# Pin because compute_id.py uses DADApy's single-scale GRIDE helper.
+dadapy==0.3.1

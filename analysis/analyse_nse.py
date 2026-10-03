@@ -11,6 +11,10 @@ from src.datautils import HYDRO_NAMES, CLIM_NAMES, LANDSCAPE_NAMES
 import matplotlib as mpl
 mpl.rcParams['xtick.labelsize'] = 20 
 mpl.rcParams['ytick.labelsize'] = 20 
+plt.rcParams["font.serif"] = "Times New Roman"
+plt.rcParams["font.family"] = "serif"
+plt.rcParams["mathtext.fontset"] = "dejavuserif"
+
 
 def get_args():
     """Parse input arguments

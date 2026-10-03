@@ -2,7 +2,13 @@ import argparse
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
+from cmcrameri import cm
 import seaborn as sns
+import matplotlib as mpl
+plt.rcParams["font.serif"] = "Times New Roman"
+plt.rcParams["font.family"] = "serif"
+plt.rcParams["mathtext.fontset"] = "dejavuserif"
+
 
 def get_args():
     """Parse input arguments
@@ -50,7 +56,7 @@ if __name__ == '__main__':
             df[seed] = nse
 
         df.index = np.arange(1,569)
-        g = sns.heatmap(df.transpose().clip(-1,1), vmin=-1, vmax=1, cmap="viridis", ax=ax[i,j], annot=False)
+        g = sns.heatmap(df.transpose().clip(-1,1), vmin=-1, vmax=1, cmap=cm.batlow, ax=ax[i,j], annot=False)
         ax[i,j].set_xticks([100,200,300,400,500])
         g.set_xticklabels(["100","200","300","400","500"], rotation = 0, fontsize=10)
         g.set_yticklabels(["1","2","3", "4"], rotation = 0, fontsize=10)

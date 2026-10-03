@@ -1,13 +1,18 @@
 import argparse
+from pathlib import Path
 import numpy as np
 import pandas as pd
 import geopandas as gpd
 import matplotlib.pyplot as plt
+from cmcrameri import cm
 import seaborn as sns
-import pickle
 from sklearn.decomposition import PCA
 from src.datautils import load_attributes, CLIM_NAMES, HYDRO_NAMES, LANDSCAPE_NAMES
 from src.utils import clean_and_capitalize, get_basin_list, str2bool
+import matplotlib as mpl
+plt.rcParams["font.serif"] = "Times New Roman"
+plt.rcParams["font.family"] = "serif"
+plt.rcParams["mathtext.fontset"] = "dejavuserif"
 
 
 def get_args():
@@ -43,6 +48,8 @@ def get_args():
         default="enca",)
     
     cfg = vars(parser.parse_args())
+    if cfg["nseeds"] < 1 or cfg["encoded_features"] < 1:
+        parser.error("--nseeds and --encoded_features must be positive.")
     return cfg
 
 
@@ -57,18 +64,28 @@ if __name__ == '__main__':
     nseeds = cfg["nseeds"]
     encoded_features = cfg["encoded_features"]
     experiment = cfg["experiment"]
-    stats = pd.read_csv(f"analysis/stats/{experiment}_{encoded_features}.csv", sep=",")
-    stats.index = [str(s).rjust(8,"0") for s in stats.loc[:,"basin"]]
-    with open(f"analysis/results_data/encoded_{experiment}_{encoded_features}.pkl", 'rb') as f:
-            dict_enc = pickle.load(f)
+    # Use pandas' compatibility reader for files created with older pandas.
+    dict_enc = pd.read_pickle(
+        f"analysis/results_data/encoded_{experiment}_{encoded_features}.pkl"
+    )
     
-    basins = [b for b in dict_enc.keys()]
-   
-    # get basins
+    # Use the same basin order for features, attributes, and map coordinates.
     basins = get_basin_list()
+    missing_basins = set(basins) - dict_enc.keys()
+    if missing_basins:
+        raise ValueError(f"Encoded features are missing basins: {sorted(missing_basins)}")
+    seeds = range(firstseed, firstseed + nseeds)
+    for basin in basins:
+        missing_seeds = set(seeds) - set(dict_enc[basin].columns)
+        if missing_seeds:
+            raise ValueError(f"Basin {basin} is missing seeds: {sorted(missing_seeds)}")
+        if len(dict_enc[basin]) != encoded_features:
+            raise ValueError(f"Basin {basin} does not have {encoded_features} features.")
+    Path("analysis/encoded").mkdir(parents=True, exist_ok=True)
+    Path("analysis/figures").mkdir(parents=True, exist_ok=True)
     # load attributes with right order
     keep = CLIM_NAMES + HYDRO_NAMES + LANDSCAPE_NAMES +  ["gauge_lat", "gauge_lon"]
-    df_S = load_attributes("data/attributes.db", basins, keep_attributes=keep)
+    df_S = load_attributes("data/attributes.db", basins, keep_attributes=keep).loc[basins]
     lat = df_S["gauge_lat"]
     lon = df_S["gauge_lon"]
     df_S = df_S.drop(["gauge_lat", "gauge_lon"], axis=1)
@@ -83,15 +100,13 @@ if __name__ == '__main__':
     # retrieve enc and plot pc on map 
     height = encoded_features * 7.0 /3.0
     keep = encoded_features # keep=8 with encoded_features > 5
-    fig, axs = plt.subplots(keep, nseeds, constrained_layout=True, figsize=(20,height))
+    fig, axs = plt.subplots(keep, nseeds, constrained_layout=True, figsize=(20,height), squeeze=False)
     x_ticks = [2+4*i for i in range(keep)]
     df_E = None
-    for seed in range(firstseed,firstseed + nseeds):
-        j = seed % 300
-        # convvert to dataframe
-        enc = np.zeros((0,encoded_features))
-        for key in dict_enc:
-            enc = np.concatenate((enc, np.expand_dims(dict_enc[key][seed],axis=0)), axis=0)
+    for j, seed in enumerate(seeds):
+        enc = np.stack([dict_enc[basin][seed].to_numpy() for basin in basins])
+        if not np.isfinite(enc).all():
+            raise ValueError(f"Encoded features for seed {seed} contain non-finite values.")
 
         # print stats
         print(f"Mean features: ", np.mean(enc, 0).round(2))
@@ -109,17 +124,16 @@ if __name__ == '__main__':
         num_basins = df_E_seed.shape[0]
         # Enforce consistent sign convention
         for i in range(1,keep+1):
-            if df_E_seed[f"enc_{i}_{seed}"][0] < 0:
+            if df_E_seed[f"enc_{i}_{seed}"].iloc[0] < 0:
                 df_E_seed[f"enc_{i}_{seed}"] = - df_E_seed[f"enc_{i}_{seed}"]
             
-        df_E_seed = (df_E_seed - df_E_seed.min())/(df_E_seed.max() - df_E_seed.min()) # normalized in (0,1)
+        # Constant features map to zero instead of producing NaNs.
+        feature_range = df_E_seed.max() - df_E_seed.min()
+        df_E_seed = (df_E_seed - df_E_seed.min()) / feature_range.replace(0, 1)
         
         # plot principal components on map
         for i in range(1,keep+1):
-            if keep > 1:
-                ax = axs[i-1, j]
-            else:
-                ax = axs[j]
+            ax = axs[i-1, j]
             
             ax.set_xlim(-128, -65)
             ax.set_ylim(24, 50)
@@ -130,9 +144,10 @@ if __name__ == '__main__':
             ax.spines['left'].set_visible(False)
             ax.tick_params(left=False, bottom=False, labelleft=False, labelbottom=False)
             us_states.boundary.plot(color="black", ax=ax, linewidth=0.5)
-            im = ax.scatter(x=lon, y=lat,c=df_E_seed[f"enc_{i}_{seed}"], cmap="viridis",vmin=0, vmax=1, s=10)
+            im = ax.scatter(x=lon, y=lat,c=df_E_seed[f"enc_{i}_{seed}"], cmap=cm.batlow,vmin=0, vmax=1, s=10)
             if j==0:
-                ax.set_ylabel(f"PC {i}",  fontsize=25)
+                label = "PC" if cfg["with_pca"] else "Feature"
+                ax.set_ylabel(f"{label} {i}",  fontsize=25)
             if i==1:
                 ax.set_title(f"Restart {j+1}", fontsize=25)
 
@@ -143,6 +158,7 @@ if __name__ == '__main__':
     cbar = fig.colorbar(im, ax=axs, orientation='vertical', fraction=0.025, pad=0.04)
     cbar.ax.tick_params(labelsize=15)
     fig.savefig(f"analysis/figures/pca_{experiment}_{encoded_features}.png", dpi=300)
+    plt.close(fig)
 
     # CONCAT
     new_order = []
@@ -155,12 +171,11 @@ if __name__ == '__main__':
     
     ### plot correalation matrix ES Spearman for all seeds
     columns = df_ES.columns
-    corr = np.array(np.abs(df_ES.corr("spearman")))[4*encoded_features:,:4*encoded_features]
+    corr = df_ES.corr("spearman").loc[df_S.columns, new_order].abs().to_numpy()
     names = []
     for n in df_S.columns:
         names.append(clean_and_capitalize(n))
     x_ticks = [0.5+i for i in range(keep)]
-    corr = corr[:, :4*keep]
     corr = corr.reshape(corr.shape[0],keep, nseeds)
     mean_corr = np.mean(corr, axis=-1)
     std_corr = np.std(corr, axis=-1)
@@ -173,7 +188,7 @@ if __name__ == '__main__':
       
     xlabels =np.arange(1, keep+1)
     
-    g = sns.heatmap(mean_corr, annot=annotations, fmt='',xticklabels=xlabels, yticklabels=names,cmap="viridis", ax=axs, vmin=0, vmax=1)#cbar_kws={'label': 'Absolute Spearman Correlation'})
+    g = sns.heatmap(mean_corr, annot=annotations, fmt='',xticklabels=xlabels, yticklabels=names,cmap=cm.batlow, ax=axs, vmin=0, vmax=1)#cbar_kws={'label': 'Absolute Spearman Correlation'})
     axs.hlines([0, 9, 21, 24, 26, 34, 39], xmin=-101, xmax=axs.get_xlim()[1], color="black", clip_on = False)
     vlines = [i for i in range(keep+1)]
     axs.vlines(vlines, ymin=axs.get_ylim()[0], ymax=axs.get_ylim()[1], color="black", clip_on = False)
@@ -188,7 +203,8 @@ if __name__ == '__main__':
     g.set_xticks(x_ticks)
     g.set_xticklabels(range(1,keep+1), rotation = 0, fontsize=15)
     g.set_yticklabels(g.get_yticklabels(), rotation = 0, fontsize=15)
-    g.set_xlabel("Relevant Features Principal Components", fontsize=15)
+    xlabel = "Relevant Features Principal Components" if cfg["with_pca"] else "Encoded Features"
+    g.set_xlabel(xlabel, fontsize=15)
     fig.tight_layout()
     fig.savefig(f"analysis/figures/ES_spearman_{experiment}_ef{encoded_features}.png", dpi=300)
-    
+    plt.close(fig)

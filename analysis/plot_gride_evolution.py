@@ -2,6 +2,10 @@
 import pandas as pd
 import matplotlib.pyplot as plt
 from matplotlib.ticker import MaxNLocator
+import matplotlib as mpl
+plt.rcParams["font.serif"] = "Times New Roman"
+plt.rcParams["font.family"] = "serif"
+plt.rcParams["mathtext.fontset"] = "dejavuserif"
 
 if __name__=="__main__":
     enc_vec = [2,3,5,27]

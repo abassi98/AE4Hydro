@@ -1,10 +1,16 @@
 
 import numpy as np
 import matplotlib.pyplot as plt
+from cmcrameri import cm
 import seaborn as sns
 from src.utils import get_basin_list
 from src.datautils import load_attributes, CLIM_NAMES, LANDSCAPE_NAMES, HYDRO_NAMES
 from src.utils import clean_and_capitalize
+import matplotlib as mpl
+plt.rcParams["font.serif"] = "Times New Roman"
+plt.rcParams["font.family"] = "serif"
+plt.rcParams["mathtext.fontset"] = "dejavuserif"
+
 
 def plot():
     basins = get_basin_list()
@@ -22,7 +28,7 @@ def plot():
     mask = np.triu(np.ones_like(corr, dtype=bool), k=1)
     
     fig.subplots_adjust(left=.5, right=1.0) 
-    g = sns.heatmap(corr, mask=mask, annot=True,fmt=".2f", xticklabels=names, yticklabels=names,cmap="viridis",vmin=0, vmax=1, ax=axs )#cbar_kws={'label': 'Absolute Spearman Correlation'})
+    g = sns.heatmap(corr, mask=mask, annot=True,fmt=".2f", xticklabels=names, yticklabels=names,cmap=cm.batlow,vmin=0, vmax=1, ax=axs )#cbar_kws={'label': 'Absolute Spearman Correlation'})
 
     lines = [0, 9, 21, 24, 26, 34, 39]
     for l in lines:

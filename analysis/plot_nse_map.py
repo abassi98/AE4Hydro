@@ -12,6 +12,9 @@ from cmcrameri import cm
 import matplotlib as mpl
 mpl.rcParams['xtick.labelsize'] = 20 
 mpl.rcParams['ytick.labelsize'] = 20 
+plt.rcParams["font.serif"] = "Times New Roman"
+plt.rcParams["font.family"] = "serif"
+plt.rcParams["mathtext.fontset"] = "dejavuserif"
 
 def get_args():
     """Parse input arguments
@@ -91,12 +94,12 @@ if __name__ == '__main__':
         nse_prev = stats_prev["nse"]
 
         color = np.clip(nse - nse_prev, -1,1)
-        im = ax[row, column].scatter(x=lon, y=lat,c=color, s=100, cmap=cm.roma_r, vmin=-1,vmax=1 )
+        im = ax[row, column].scatter(x=lon, y=lat,c=color, s=100, cmap=cm.batlow, vmin=-1,vmax=1 )
         ax[row, column].set_title(f"Delta NSE: ENCA-{encoded_features_vec[i]} and ENCA-{encoded_features_vec[i-1]}", fontsize=35, y=-0.2)
         ax[row, column+1].set_ylabel(f"NSE ENCA-{encoded_features_vec[i-1]}", fontsize=35)
         ax[row, column+1].set_xlabel(f"NSE ENCA-{encoded_features_vec[i]}", fontsize=35)
         ax[row, column+1].plot(line, line, c="black",ls="--")
-        sc = ax[row, column+1].scatter(np.clip(nse, -1,1), np.clip(nse_prev,-1,1), c=color, s=100, cmap=cm.roma_r, vmin=-1,vmax=1 )
+        sc = ax[row, column+1].scatter(np.clip(nse, -1,1), np.clip(nse_prev,-1,1), c=color, s=100, cmap=cm.batlow, vmin=-1,vmax=1 )
         cb = fig.colorbar(sc)
         cb.set_label("Delta NSE clipped in [-1,1]", fontsize=25) 
         ax[row, column+1].text(-0.8,0.8, f"r = {np.round(pearsonr(nse, nse_prev)[0], 2)}", fontsize=30)
@@ -125,12 +128,12 @@ if __name__ == '__main__':
         us_states.boundary.plot(color="black", ax=ax[ind], linewidth=0.5)
     
         color = np.clip(nse - nse_caam, -1,1)
-        im = ax[ind].scatter(x=lon, y=lat,c=color, s=100, cmap=cm.roma_r, vmin=-1,vmax=1 )
+        im = ax[ind].scatter(x=lon, y=lat,c=color, s=100, cmap=cm.batlow, vmin=-1,vmax=1 )
         ax[ind].set_title(f"Delta NSE: ENCA-{encoded_features_vec[i]} and CAAM", fontsize=35, y=-0.2)
         ax[ind+1].set_ylabel("NSE CAAM", fontsize=35)
         ax[ind+1].set_xlabel(f"NSE ENCA-{encoded_features_vec[i]}", fontsize=35)
         ax[ind+1].plot(line, line, c="black",ls="--")
-        sc = ax[ind+1].scatter(np.clip(nse, -1,1), np.clip(nse_caam,-1,1), c=color, s=100, cmap=cm.roma_r, vmin=-1,vmax=1 )
+        sc = ax[ind+1].scatter(np.clip(nse, -1,1), np.clip(nse_caam,-1,1), c=color, s=100, cmap=cm.batlow, vmin=-1,vmax=1 )
         cb = fig.colorbar(sc)
         cb.set_label("Delta NSE clipped in [-1,1]", fontsize=25) 
         ax[ind+1].text(-0.8,0.8, f"r = {np.round(pearsonr(nse, nse_caam)[0], 2)}", fontsize=30)

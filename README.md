@@ -30,7 +30,7 @@ The learned latent space acts as a compact representation of catchment propertie
 The framework trains an autoencoder conditioned on meteorological inputs to reconstruct streamflow while encouraging the latent representation to encode landscape information.
 
 <p align="center">
-  <img src="f01.png" width="950">
+  <img src="model.png" width="950">
 </p>
 
 ---
@@ -101,6 +101,25 @@ Which will generate streamflow predictions and encoded features, stored in:
 analysis/results_data/
 ```
 
+To compute intrinsic dimension from the space-delimited feature files in
+`analysis/encoded/`, use the Python version of `analysis/compute_id.R`:
+
+```bash
+conda create -n ae4hydro-id python=3.12 pip
+conda activate ae4hydro-id
+python -m pip install -r analysis/requirements-id.txt
+python analysis/compute_id.py
+```
+
+This separate environment accommodates DADApy 0.3.1's NumPy `<2` requirement.
+By default the script processes ENCA with two features and seeds 300–303,
+evaluating all 280 neighbor pairs from `(1, 2)` to `(280, 560)`. It writes
+`analysis/encoded/id_enca_2_<seed>.txt` with the `d,id` columns expected by
+`plot_gride_evolution.py`. Use `--encoded-features`, `--seeds`, `--encoded-dir`,
+or `--output-dir` to change these defaults. DADApy's ratio filtering and
+finite-sample correction can produce slightly different IDs from intRinsic;
+`d` retains the original mean distance to the second neighbor order, `n2`.
+
 ---
 
 ## Data
@@ -133,5 +152,4 @@ URL = {https://hess.copernicus.org/articles/28/4971/2024/},
 DOI = {10.5194/hess-28-4971-2024}
 }
 ```
-
 
